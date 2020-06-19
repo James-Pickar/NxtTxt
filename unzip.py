@@ -23,6 +23,7 @@ def generate_output_path(input_file: Path, manual_path: str):
     else:
         test_path: str
         if manual_path:
+            print("    Generating path from manual input and zipfile name.")
             test_path = str(Path(manual_path).joinpath(input_file.stem))
         else:
             print("    Removing file extension...")
@@ -32,7 +33,6 @@ def generate_output_path(input_file: Path, manual_path: str):
 
         try:
             last_number = test_path.split()[-1]
-            print("    Checking if there is already a directory by the same name as the zip file...")
             iteration_number = int(last_number)
 
         except (ValueError, IndexError):
@@ -41,6 +41,8 @@ def generate_output_path(input_file: Path, manual_path: str):
         else:
             ends_in_a_number = True
 
+        print("    Checking if there is already a directory by the same name as the zip file...")
+        print("    Generating name...")
         while Path(test_path).exists():
             if ends_in_a_number:
                 test_path = test_path[:-1].strip()
@@ -50,9 +52,8 @@ def generate_output_path(input_file: Path, manual_path: str):
 
             iteration_number += 1
 
-        print("    Generating name...")
         final_path = Path(test_path)
-        print("    Output directory name generated as", test_path)
+    print("    Output directory name generated as", str(final_path) + ".")
     return final_path
 
 
@@ -62,6 +63,7 @@ def create_output_directory(output_file: Path, mode: str):
     print("    Checking if mode preference was expressed...")
 
     if not mode:
+        print("    Creating directory...")
         output_file.mkdir()
 
     else:
@@ -73,15 +75,16 @@ def create_output_directory(output_file: Path, mode: str):
                   + Style.RESET_ALL)
             exit(1)
         else:
+            print("    Creating directory...")
             output_file.mkdir(mode_int)
-    print("    Output directory created.")
+    print("Output directory created.")
 
 
 # Unzip documents into folder
 def unzip_file(input_file: str, output_file: Path):
     print("Unzipping files into output directory...")
     try:
-
+        print("    Extracting...")
         zipfile.ZipFile(input_file, 'r').extractall(output_file)
 
     except (zipfile.BadZipFile, FileNotFoundError):
