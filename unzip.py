@@ -13,6 +13,9 @@ def generate_output_path(input_file: Path, manual_path: str):
     if not input_file.exists():
         print(Back.RED + Fore.BLACK + Style.BRIGHT + str(input_file), "is not a valid file path." + Style.RESET_ALL)
         exit(1)
+    if manual_path and (not Path(manual_path).is_dir()):
+        print(Back.RED + Fore.BLACK + Style.BRIGHT + manual_path, "is not a valid output directory." + Style.RESET_ALL)
+        exit(1)
 
     final_path: Path
     if not new_dir:
