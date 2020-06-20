@@ -85,7 +85,9 @@ def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
 
 
 def create_output_directory(output_path: Path, mode: str):
-    if mode:
+    if not mode:
+        output_path.mkdir()
+    else:
         try:
             mode_int = int(mode)
         except ValueError:

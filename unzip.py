@@ -101,7 +101,10 @@ def unzip_file(input_file: str, output_file: Path):
         print(Back.RED + Fore.BLACK + Style.BRIGHT + "Permission level ", "makes the input file or output directory "
                                                                           "inaccessible to this script. Try running "
                                                                           "as root." + Style.RESET_ALL)
+
+        output_file.rmdir()
         exit(1)
+
     print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "    ", input_file, " unzipped to ", str(output_file), " in ",
           time.time() - startTime, "seconds (including user input)." + Style.RESET_ALL)
 
