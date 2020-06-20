@@ -84,7 +84,7 @@ def create_output_directory(output_file: Path, mode: str):
 
 
 # Unzip documents into folder
-def unzip_file(input_file: str, output_file: Path):
+def unzip_file(input_file: str, output_file: Path, mode: str):
     print("Unzipping files into output directory...")
     try:
         print("    Extracting...")
@@ -98,11 +98,12 @@ def unzip_file(input_file: str, output_file: Path):
         exit(1)
 
     except PermissionError:
-        print(Back.RED + Fore.BLACK + Style.BRIGHT + "Permission level ", "makes the input file or output directory "
-                                                                          "inaccessible to this script. Try running "
-                                                                          "as root." + Style.RESET_ALL)
-
-        output_file.rmdir()
+        print(Back.RED + Fore.BLACK + Style.BRIGHT + "Permission level ", mode,
+              "makes the input file or output directory "
+              "inaccessible to this script. Try running "
+              "as root." + Style.RESET_ALL)
+        if new_dir:
+            output_file.rmdir()
         exit(1)
 
     print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "    ", input_file, " unzipped to ", str(output_file), " in ",
@@ -134,4 +135,4 @@ if __name__ == "__main__":
     elif output_mode:
         print(Back.YELLOW + Fore.BLACK + Style.BRIGHT + "Mode preference will be ignored, since a new directory was "
                                                         "not requested." + Style.RESET_ALL)
-    unzip_file(zip_file_path, output_path)
+    unzip_file(zip_file_path, output_path, output_mode)
