@@ -99,8 +99,8 @@ def unzip_file(input_file: str, output_file: Path):
                                                                           "inaccessible to this script. Try running "
                                                                           "as root." + Style.RESET_ALL)
         exit(1)
-    print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "    ", input_file, " unzipped to ", str(output_file), " in ", time.time() - startTime,
-          "seconds (including user input)." + Style.RESET_ALL)
+    print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "    ", input_file, " unzipped to ", str(output_file), " in ",
+          time.time() - startTime, "seconds (including user input)." + Style.RESET_ALL)
 
 
 if __name__ == "__main__":
@@ -125,4 +125,7 @@ if __name__ == "__main__":
     output_path: Path = generate_output_path(Path(zip_file_path), output_file_path)
     if new_dir:
         create_output_directory(output_path, output_mode)
+    elif output_mode:
+        print(Back.YELLOW + Fore.BLACK + Style.BRIGHT + "Mode preference will be ignored, since a new directory was "
+                                                        "not requested." + Style.RESET_ALL)
     unzip_file(zip_file_path, output_path)
