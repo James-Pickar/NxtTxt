@@ -4,7 +4,7 @@ from pathlib import Path
 from colorama import Fore, Back, Style
 
 
-# "Modular" fuctions (used multiple times each)
+# "Modular" functions (used multiple times each)
 def get_mode(input_mode: str):
     output_mode: int = 0o777
     if input_mode:
@@ -36,7 +36,6 @@ def enumerate_duplicate_path(start_path: str):
     else:
         ends_in_a_number = True
 
-    print("    Checking if there is already a directory by the same name as the new directory...")
     print("    Generating name...")
     while (Path(test_path).with_suffix(end_suffix)).exists():
         if ends_in_a_number:
@@ -122,21 +121,27 @@ def create_output_directory(output_path: Path, mode: str, pdfs_list: list, new_d
 def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mode: str):
     print("Extracting text...")
     for pdf_path in pdf_paths:
-        txt_path = enumerate_duplicate_path(str(output_path.joinpath(pdf_path.stem + ".txt")))
+        txt_path = enumerate_duplicate_path(str(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt"))))
         txt_path.touch(get_mode(input_mode), False)
         print("   ", pdf_path, "->", txt_path)
 
         pdf_reader = PyPDF2.PdfFileReader(str(pdf_path))
-        page_max_index = pdf_reader.getNumPages() - 1
-        page: int = 0
-        extracted_text: str = ""
-        while page <= page_max_index:
-            extracted_text += "\n\n" + pdf_reader.getPage(page).extractText()
-            page += 1
-        txt_path.write_text(extracted_text)
+        try:
+            page_max_index = pdf_reader.getNumPages() - 1
+        except PyPDF2.PdfReadError:
+            print(Back.YELLOW + Fore.BLACK + Style.BRIGHT + "    There was a error reading", pdf_path, "so it will be "
+                                                                                                       "skipped.",
+                  " Check if the file is encrypted." + Style.RESET_ALL)
+            txt_path.rmdir()
+        else:
+            page: int = 0
+            extracted_text: str = ""
+            while page <= page_max_index:
+                extracted_text += "\n\n" + pdf_reader.getPage(page).extractText()
+                page += 1
+            txt_path.write_text(extracted_text)
 
-    print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "All pdfs in", input_path, "extracted to", str(output_path)
-          + Style.RESET_ALL)
+    print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "All pdfs in", input_path, "extracted to", str(output_path) + Style.RESET_ALL)
 
 
 if __name__ == "__main__":
