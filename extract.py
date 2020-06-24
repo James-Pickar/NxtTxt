@@ -1,5 +1,6 @@
 import argparse
 import PyPDF2
+import pdfminer
 from pathlib import Path
 from colorama import Fore, Back, Style
 
@@ -26,14 +27,13 @@ def determine_pdfs(input_path: Path):
             print("       ", str(child), "is not a PDF file.")
         else:
             print("       ", str(child), "is a PDF file.")
-            pdfs_working_list.append(child)
+            pdfs_working_list.append(child.absolute())
 
     print("PDFs list compiled.")
     return pdfs_working_list
 
 
 def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
-
     print("Generating Output Path...")
 
     if manual_path and (not Path(manual_path).is_dir()):
@@ -84,17 +84,39 @@ def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
     return final_path
 
 
-def create_output_directory(output_path: Path, mode: str):
-    if not mode:
-        output_path.mkdir()
-    else:
+def get_mode(input_mode: str):
+    output_mode: int = 0o777
+    if input_mode:
         try:
-            mode_int = int(mode)
+            int(input_mode)
         except ValueError:
-            print(Back.RED + Fore.BLACK + Style.BRIGHT + mode,
+            print(Back.RED + Fore.BLACK + Style.BRIGHT + input_mode,
                   "is not a valid unix permission level." + Style.RESET_ALL)
+            exit(1)
         else:
-            output_path.mkdir(mode_int)
+            output_mode = int("0o" + input_mode)
+    return output_mode
+
+
+def create_output_directory(output_path: Path, mode: str):
+    print("Creating output directory...")
+    output_path.mkdir(get_mode(mode))
+
+
+def extract_text(pdf_paths: [Path], output_path: Path, input_mode: int):
+    for pdf_path in pdf_paths:
+        txt_path = output_path.joinpath(pdf_path.stem + ".txt")
+        txt_path.touch(get_mode(input_mode), False)
+
+        pdf_reader = PyPDF2.PdfFileReader(str(pdf_path))
+        page_max_index = pdf_reader.getNumPages() - 1
+        page: int = 0
+        extracted_text: str = ""
+        while page <= page_max_index:
+            extracted_text += "\n\n" + pdf_reader.getPage(page).extractText()
+            page += 1
+        txt_path.write_text(extracted_text)
+    print("Done!")
 
 
 if __name__ == "__main__":
@@ -111,10 +133,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     pdfs = determine_pdfs(Path(args.input))
-    output_path = generate_output_path(Path(args.input), args.output, args.nd)
-    print(output_path)
+    output_dir_path = generate_output_path(Path(args.input), args.output, args.nd)
+
     if len(pdfs) > 0 and args.nd:
-        create_output_directory(Path(args.input), args.mode)
+        create_output_directory(output_dir_path, args.mode)
     elif not (len(pdfs) > 0):
         print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "No PDFs found in", args.input + Style.RESET_ALL)
         exit(0)
@@ -122,3 +144,4 @@ if __name__ == "__main__":
         print(
             Back.YELLOW + Fore.BLACK + Style.BRIGHT + "Mode preference will be ignored, since a new directory was not "
                                                       "requested." + Style.RESET_ALL)
+    extract_text(pdfs, output_dir_path, args.mode)
