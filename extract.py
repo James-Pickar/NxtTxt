@@ -1,6 +1,7 @@
 import argparse
 import PyPDF2
 from pathlib import Path
+import time
 from colorama import Fore, Back, Style
 
 
@@ -39,7 +40,8 @@ def enumerate_duplicate_path(start_path: str):
     print("    Generating name...")
     while (Path(test_path).with_suffix(end_suffix)).exists():
         if ends_in_a_number:
-            test_path = test_path[:-1].strip()
+            test_path = test_path.split()[:-1]
+            test_path = " ".join(test_path)
         test_path += " " + str(iteration_number + 1)
         ends_in_a_number = True
         iteration_number += 1
@@ -118,7 +120,17 @@ def create_output_directory(output_path: Path, mode: str, pdfs_list: list, new_d
                                                       "requested." + Style.RESET_ALL)
 
 
-def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mode: str):
+def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mode: str, max_extraction_time: str):
+    max_extraction_time_float: float = None
+    if max_extraction_time:
+        try:
+            float(max_extraction_time)
+        except ValueError:
+            print(max_extraction_time, "is not a valid time limit. The extractions will proceed without a time limit.")
+        else:
+            if float(max_extraction_time) > 0:
+                max_extraction_time_float = float(max_extraction_time)
+
     print("Extracting text...")
     for pdf_path in pdf_paths:
         txt_path = enumerate_duplicate_path(str(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt"))))
@@ -128,20 +140,28 @@ def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mo
         pdf_reader = PyPDF2.PdfFileReader(str(pdf_path))
         try:
             page_max_index = pdf_reader.getNumPages() - 1
-        except PyPDF2.PdfReadError:
+        except PyPDF2.utils.PdfReadError:
             print(Back.YELLOW + Fore.BLACK + Style.BRIGHT + "    There was a error reading", pdf_path, "so it will be "
                                                                                                        "skipped.",
                   " Check if the file is encrypted." + Style.RESET_ALL)
-            txt_path.rmdir()
+            txt_path.unlink()
         else:
             page: int = 0
             extracted_text: str = ""
+
+            start_time = time.time()
             while page <= page_max_index:
+                if max_extraction_time_float and (start_time + max_extraction_time_float) < time.time():
+                    print(Back.YELLOW + Fore.BLACK + Style.BRIGHT, pdf_path, "timed out after extracting", page,
+                          "/", (page_max_index + 1), "pages. To extract the full document run the command again with "
+                                                     "a longer or nonexistent time limit.", Style.RESET_ALL)
+                    break
                 extracted_text += "\n\n" + pdf_reader.getPage(page).extractText()
                 page += 1
             txt_path.write_text(extracted_text)
 
-    print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "All pdfs in", input_path, "extracted to", str(output_path) + Style.RESET_ALL)
+    print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "PDFs in", input_path, "extracted to",
+          str(output_path) + Style.RESET_ALL)
 
 
 if __name__ == "__main__":
@@ -155,11 +175,13 @@ if __name__ == "__main__":
                                                          "name as pdf file(Defaults to false).")
     parser.add_argument("--mode", metavar="Permission", type=str, help="Unix permission level for new directory ("
                                                                        "Defaults to 777)")
+    parser.add_argument("--time", metavar="Extraction time limit", type=str, help="Restricts the time for the "
+                                                                                  "extraction of each PDF to the "
+                                                                                  "inputted value in seconds.")
     args = parser.parse_args()
 
     pdfs = determine_pdfs(Path(args.input))
     output_dir_path = generate_output_path(Path(args.input), args.output, args.nd)
 
     create_output_directory(output_dir_path, args.mode, pdfs, args.nd)
-
-    extract_text(pdfs, output_dir_path, args.input, args.mode)
+    extract_text(pdfs, output_dir_path, args.input, args.mode, args.time)
