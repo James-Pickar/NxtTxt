@@ -7,8 +7,10 @@ from colorama import Fore, Back, Style
 
 # "Modular" functions (used multiple times each)
 def get_mode(input_mode: str):
-    output_mode: int = 0o777
-    if input_mode:
+    output_mode: int
+    if not input_mode:
+        output_mode = 0o777
+    else:
         try:
             int(input_mode)
         except ValueError:
@@ -20,7 +22,7 @@ def get_mode(input_mode: str):
     return output_mode
 
 
-def enumerate_duplicate_path(start_path: str):
+def enumerate_duplicate_paths(start_path: str):
     test_path = str(Path(start_path).with_suffix(''))
     start_suffixes = Path(start_path).suffixes
     end_suffix = "".join(start_suffixes)
@@ -49,7 +51,7 @@ def enumerate_duplicate_path(start_path: str):
     return end_path
 
 
-# Procedure functions(called once each)
+# "Procedural" functions(called once each)
 def determine_pdfs(input_path: Path):
     print("Reading input directory.")
     print("    Verifying input path is a readable directory...")
@@ -98,10 +100,10 @@ def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
             parent_path = Path(manual_path)
         else:
             parent_path = input_path
-        test_path = str(parent_path.joinpath(input_path.stem))
+        test_path = str(parent_path / input_path.stem)
         test_path += " extracted pdfs"
 
-        final_path = enumerate_duplicate_path(test_path)
+        final_path = enumerate_duplicate_paths(test_path)
     print("    Output directory name generated as", str(final_path) + ".")
     return final_path
 
@@ -120,20 +122,11 @@ def create_output_directory(output_path: Path, mode: str, pdfs_list: list, new_d
                                                       "requested." + Style.RESET_ALL)
 
 
-def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mode: str, max_extraction_time: str):
-    max_extraction_time_float: float = None
-    if max_extraction_time:
-        try:
-            float(max_extraction_time)
-        except ValueError:
-            print(max_extraction_time, "is not a valid time limit. The extractions will proceed without a time limit.")
-        else:
-            if float(max_extraction_time) > 0:
-                max_extraction_time_float = float(max_extraction_time)
+def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mode: str, max_extraction_time: float):
 
     print("Extracting text...")
     for pdf_path in pdf_paths:
-        txt_path = enumerate_duplicate_path(str(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt"))))
+        txt_path = enumerate_duplicate_paths(str(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt"))))
         txt_path.touch(get_mode(input_mode), False)
         print("   ", pdf_path, "->", txt_path)
 
@@ -151,7 +144,7 @@ def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mo
 
             start_time = time.time()
             while page <= page_max_index:
-                if max_extraction_time_float and (start_time + max_extraction_time_float) < time.time():
+                if max_extraction_time and (start_time + max_extraction_time) < time.time():
                     print(Back.YELLOW + Fore.BLACK + Style.BRIGHT, pdf_path, "timed out after extracting", page,
                           "/", (page_max_index + 1), "pages. To extract the full document run the command again with "
                                                      "a longer or nonexistent time limit.", Style.RESET_ALL)
@@ -175,13 +168,13 @@ if __name__ == "__main__":
                                                          "name as pdf file(Defaults to false).")
     parser.add_argument("--mode", metavar="Permission", type=str, help="Unix permission level for new directory ("
                                                                        "Defaults to 777)")
-    parser.add_argument("--time", metavar="Extraction time limit", type=str, help="Restricts the time for the "
-                                                                                  "extraction of each PDF to the "
-                                                                                  "inputted value in seconds.")
+    parser.add_argument("--timeout", metavar="Extraction time limit", type=float, help="Restricts the time for the "
+                                                                                       "extraction of each PDF to the "
+                                                                                       "inputted value in seconds.")
     args = parser.parse_args()
 
     pdfs = determine_pdfs(Path(args.input))
     output_dir_path = generate_output_path(Path(args.input), args.output, args.nd)
 
     create_output_directory(output_dir_path, args.mode, pdfs, args.nd)
-    extract_text(pdfs, output_dir_path, args.input, args.mode, args.time)
+    extract_text(pdfs, output_dir_path, args.input, args.mode, args.timeout)
