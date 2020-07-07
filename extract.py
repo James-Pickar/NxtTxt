@@ -7,10 +7,8 @@ from colorama import Fore, Back, Style
 
 # "Modular" functions (used multiple times each)
 def get_mode(input_mode: str):
-    output_mode: int
-    if not input_mode:
-        output_mode = 0o777
-    else:
+    output_mode: int = 0o777
+    if input_mode:
         try:
             int(input_mode)
         except ValueError:
