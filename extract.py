@@ -2,21 +2,20 @@ import argparse
 import PyPDF2
 from pathlib import Path
 import time
-from colorama import Fore, Back, Style
 
 
 # "Modular" functions (used multiple times each)
 def get_mode(input_mode: str):
     output_mode: int = 0o777
-    if input_mode:
-        try:
-            int(input_mode)
-        except ValueError:
-            print(Back.RED + Fore.BLACK + Style.BRIGHT + input_mode,
-                  "is not a valid unix permission level." + Style.RESET_ALL)
-            exit(1)
-        else:
-            output_mode = int("0o" + input_mode)
+    if not input_mode:
+        return output_mode
+    try:
+        int(input_mode)
+    except ValueError:
+        print(input_mode, "is not a valid unix permission level.")
+        exit(1)
+    else:
+        output_mode = int("0o" + input_mode)
     return output_mode
 
 
@@ -54,11 +53,10 @@ def determine_pdfs(input_path: Path):
     print("Reading input directory.")
     print("    Verifying input path is a readable directory...")
     if not input_path.exists():
-        print(Back.RED + Fore.BLACK + Style.BRIGHT + str(input_path), "is not a valid file path." + Style.RESET_ALL)
+        print(str(input_path), "is not a valid file path.")
         exit(1)
     elif not input_path.is_dir():
-        print(Back.RED + Fore.BLACK + Style.BRIGHT + str(input_path), "is not a directory, it is either a file, or it "
-                                                                      "is a broken symbolic link." + Style.RESET_ALL)
+        print(str(input_path), "is not a directory, it is either a file, or it is a broken symbolic link.")
         exit(1)
 
     pdfs_working_list: list = []
@@ -82,7 +80,7 @@ def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
     print("Generating Output Path...")
 
     if manual_path and (not Path(manual_path).is_dir()):
-        print(Back.RED + Fore.BLACK + Style.BRIGHT + manual_path, "is not a valid output directory." + Style.RESET_ALL)
+        print(manual_path, "is not a valid output directory.")
         exit(1)
 
     final_path: Path
@@ -112,16 +110,13 @@ def create_output_directory(output_path: Path, mode: str, pdfs_list: list, new_d
         output_path.mkdir(get_mode(mode))
         print("Output directory created.")
     elif not (len(pdfs_list) > 0):
-        print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "No PDFs found in", args.input + Style.RESET_ALL)
+        print("No PDFs found in", args.input)
         exit(0)
     elif (not new_dir) and mode:
-        print(
-            Back.YELLOW + Fore.BLACK + Style.BRIGHT + "Mode preference will be ignored, since a new directory was not "
-                                                      "requested." + Style.RESET_ALL)
+        print("Mode preference will be ignored, since a new directory was not requested.")
 
 
 def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mode: str, max_extraction_time: float):
-
     print("Extracting text...")
     for pdf_path in pdf_paths:
         txt_path = enumerate_duplicate_paths(str(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt"))))
@@ -132,9 +127,10 @@ def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mo
         try:
             page_max_index = pdf_reader.getNumPages() - 1
         except PyPDF2.utils.PdfReadError:
-            print(Back.YELLOW + Fore.BLACK + Style.BRIGHT + "    There was a error reading", pdf_path, "so it will be "
-                                                                                                       "skipped.",
-                  " Check if the file is encrypted." + Style.RESET_ALL)
+            if pdf_reader.isEncrypted:
+                print(pdf_path, "is encrypted and cannot be extracted. If you would like this file to be extracted, "
+                                "please decrypt the file and run the extraction again.")
+            print("    There was a error reading", pdf_path, "so it will be skipped. Check if the file is encrypted.")
             txt_path.unlink()
         else:
             page: int = 0
@@ -143,16 +139,19 @@ def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mo
             start_time = time.time()
             while page <= page_max_index:
                 if max_extraction_time and (start_time + max_extraction_time) < time.time():
-                    print(Back.YELLOW + Fore.BLACK + Style.BRIGHT, pdf_path, "timed out after extracting", page,
-                          "/", (page_max_index + 1), "pages. To extract the full document run the command again with "
-                                                     "a longer or nonexistent time limit.", Style.RESET_ALL)
+                    print(pdf_path, "timed out after extracting", page, "/", (page_max_index + 1), "pages. To extract "
+                                                                                                   "the full document"
+                                                                                                   " run the command "
+                                                                                                   "again with a "
+                                                                                                   "longer or "
+                                                                                                   "nonexistent time "
+                                                                                                   "limit.")
                     break
                 extracted_text += "\n\n" + pdf_reader.getPage(page).extractText()
                 page += 1
             txt_path.write_text(extracted_text)
 
-    print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "PDFs in", input_path, "extracted to",
-          str(output_path) + Style.RESET_ALL)
+    print("PDFs in", input_path, "extracted to", str(output_path))
 
 
 if __name__ == "__main__":
