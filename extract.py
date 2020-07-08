@@ -106,17 +106,18 @@ def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
 
 def create_output_directory(output_path: Path, mode: str, pdfs_list: list, new_dir: bool):
     print("Creating output directory...")
-    if len(pdfs_list) > 0 and args.nd:
+    pdfs_list_count: int = len(pdfs_list)
+    if pdfs_list_count > 0 and args.nd:
         output_path.mkdir(get_mode(mode))
         print("Output directory created.")
-    elif not (len(pdfs_list) > 0):
+    elif not (pdfs_list_count > 0):
         print("No PDFs found in", args.input)
         exit(0)
     elif (not new_dir) and mode:
         print("Mode preference will be ignored, since a new directory was not requested.")
 
 
-def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mode: str, max_extraction_time: float):
+def extract_text(pdf_paths: list, output_path: Path, input_path: str, input_mode: str, max_extraction_time: float):
     print("Extracting text...")
     for pdf_path in pdf_paths:
         txt_path = enumerate_duplicate_paths(str(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt"))))
@@ -128,9 +129,10 @@ def extract_text(pdf_paths: [Path], output_path: Path, input_path: str, input_mo
             page_max_index = pdf_reader.getNumPages() - 1
         except PyPDF2.utils.PdfReadError:
             if pdf_reader.isEncrypted:
-                print(pdf_path, "is encrypted and cannot be extracted. If you would like this file to be extracted, "
-                                "please decrypt the file and run the extraction again.")
-            print("    There was a error reading", pdf_path, "so it will be skipped. Check if the file is encrypted.")
+                print("   ", pdf_path, "is encrypted and cannot be extracted. If you would like this file to be "
+                                       "extracted, please decrypt the file and run the extraction again.")
+            else:
+                print("    There was a error reading", pdf_path, "the file may be corrupted so it will be skipped.")
             txt_path.unlink()
         else:
             page: int = 0
