@@ -1,10 +1,11 @@
-import time
-"""
-for x in range(0, 5):
-    b = "Loading" + "." * x
-    print(b, end="\r")
-    time.sleep(1)
-"""
-print("hi")
-print("\r")
-time.sleep(1)
+import os
+
+print("Start!")
+methods = ["tesseract", "pdftotext", "pdfminer"]
+
+
+time_per_byte = os.path.getsize("/Users/jamiepickar/Downloads/pdfs/Alcoa.pdf")
+print(time_per_byte, "bytes.")
+
+print("Finished!")
+exit(0)
