@@ -19,18 +19,21 @@ def get_mode(input_mode: str):
 
 
 def server_is_active(url: str):
+    state_of_the_server: list
     try:
         requests.get(url)
     except requests.exceptions.ConnectionError:
-        return [False, "Connection to server failed. Please check that your instance is active."]
+        state_of_the_server = [False, "Connection to server failed. Please check that your instance is active."]
     except requests.exceptions.Timeout:
-        return [False, "Connection Timed Out."]
+        state_of_the_server = [False, "Connection Timed Out."]
     except requests.exceptions.TooManyRedirects:
-        return [False, "The address entered causes too many redirects."]
+        state_of_the_server = [False, "The address entered causes too many redirects."]
     except requests.exceptions.RequestException:
-        return [False, "There was an unknown issue with the server. Please check that engine is working properly."]
+        state_of_the_server = [False, "There was an unknown issue with the server. Please check that engine is "
+                                      "working properly."]
     else:
-        return [True, "Success!"]
+        state_of_the_server = [True, "Success!"]
+    return state_of_the_server
 
 
 # "Procedural" functions
