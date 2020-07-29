@@ -1,11 +1,13 @@
-import os
-
-print("Start!")
-methods = ["tesseract", "pdftotext", "pdfminer"]
-
-
-time_per_byte = os.path.getsize("/Users/jamiepickar/Downloads/pdfs/Alcoa.pdf")
-print(time_per_byte, "bytes.")
-
-print("Finished!")
-exit(0)
+import requests
+try:
+    response = requests.get('http://ec2-35-174-241-30.compute-1.amazonaws.com:8080/management/health')
+except requests.exceptions.ConnectionError:
+    print("Connection failed")
+except requests.exceptions.Timeout:
+    print("Connection Timeout")
+except requests.exceptions.TooManyRedirects:
+    print("Too Many Redirects")
+except requests.exceptions.RequestException:
+    print("Other Exception")
+else:
+    print("success")
