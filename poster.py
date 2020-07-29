@@ -53,27 +53,32 @@ def determine_txts(input_dir):
     return txt_working_list
 
 
-def analyze_txts(txt_file_paths: list, address: str, port: int, requested_format: str):
+def determine_format(requested_format: str):
+    input_format = "application/xml"
+    if requested_format:
+        if (requested_format == "xml") or (requested_format == "json"):
+            input_format = "application/" + requested_format
+        else:
+            print(requested_format, "is not a valid format. Please enter either xml or json.")
+            exit(1)
+    return input_format
+
+
+def analyze_txts(txt_file_paths: list, address: str, port: int, final_format: str):
     url: str
     if not port:
         url = "http://" + address + ":8080/api/v1/articles/analyzeText"
     else:
         url = "http://" + address + ":" + str(port) + "/api/v1/articles/analyzeText"
-    output_format = "application/xml"
+
     server_active = server_is_active(url)
     if not server_active[0]:
         print(server_active[1])
         exit(1)
-    elif requested_format:
-        if (requested_format == "xml") or (requested_format == "json"):
-            output_format = "application/" + requested_format
-        else:
-            print(requested_format, "is not a valid format. Please enter either xml or json.")
-            exit(1)
     analyzed_txts: dir = {}
     headers = {
         "Content-type": "text/plain",
-        "Accept": output_format,
+        "Accept": final_format,
     }
     for txt_file_path in txt_file_paths:
         data = open(str(txt_file_path), "rb").read()
@@ -95,4 +100,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     files = determine_txts(args.input)
-    analysis = analyze_txts(files, args.address, args.p, args.f)
+    output_format = determine_format(args.f)
+    analysis = analyze_txts(files, args.address, args.p, output_format)
