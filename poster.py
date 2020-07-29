@@ -64,7 +64,7 @@ def determine_format(requested_format: str):
     return input_format
 
 
-def analyze_txts(txt_file_paths: list, address: str, port: int, final_format: str):
+def determine_url(address: str, port: int):
     url: str
     if not port:
         url = "http://" + address + ":8080/api/v1/articles/analyzeText"
@@ -75,6 +75,10 @@ def analyze_txts(txt_file_paths: list, address: str, port: int, final_format: st
     if not server_active[0]:
         print(server_active[1])
         exit(1)
+    return url
+
+
+def analyze_txts(txt_file_paths: list, url: str, final_format: str):
     analyzed_txts: dir = {}
     headers = {
         "Content-type": "text/plain",
@@ -101,4 +105,5 @@ if __name__ == "__main__":
 
     files = determine_txts(args.input)
     output_format = determine_format(args.f)
-    analysis = analyze_txts(files, args.address, args.p, output_format)
+    output_url = determine_url(args.address, args.p)
+    analysis = analyze_txts(files, output_url, output_format)
