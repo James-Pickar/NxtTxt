@@ -37,33 +37,28 @@ def server_is_active(url: str):
 
 
 def enumerate_duplicate_paths(start_path: Path):
-    final_path: Path
-    if not start_path.exists():
-        final_path = start_path
-    else:
-        parent = start_path.parent
-        suffix = "".join(start_path.suffixes)
-        test_path = start_path.with_suffix('').name
+    parent = start_path.parent
+    suffix = "".join(start_path.suffixes)
+    test_path = start_path.with_suffix('').name
 
-        ends_in_a_number: bool = True
+    ends_in_a_number: bool = True
 
-        try:
-            iteration_number = int(test_path.split()[-1])
+    try:
+        iteration_number = int(test_path.split()[-1])
 
-        except (ValueError, IndexError):
-            iteration_number = 1
-            ends_in_a_number = False
+    except (ValueError, IndexError):
+        iteration_number = 1
+        ends_in_a_number = False
 
-        print("    Generating name...")
-        while ((parent / test_path).with_suffix(suffix)).exists():
-            if ends_in_a_number:
-                test_path = test_path.split()[:-1][0]
-            test_path += " " + str(iteration_number + 1)
-            ends_in_a_number = True
-            iteration_number += 1
+    print("    Generating name...")
+    while ((parent / test_path).with_suffix(suffix)).exists():
+        if ends_in_a_number:
+            test_path = test_path.split()[:-1][0]
+        test_path += " " + str(iteration_number + 1)
+        ends_in_a_number = True
+        iteration_number += 1
 
-        final_path = (parent / test_path).with_suffix(suffix)
-    return final_path
+    return (parent / test_path).with_suffix(suffix)
 
 
 # "Procedural" functions
