@@ -61,6 +61,22 @@ def enumerate_duplicate_paths(start_path: Path):
     return (parent / test_path).with_suffix(suffix)
 
 
+def retrieve_path_with_manual_output(output_dir: str, new_dir: bool):
+    if new_dir:
+        # do enumeration
+        final_output_path = enumerate_duplicate_paths(Path(output_dir))
+    else:
+        final_output_path = Path(Path(output_dir))
+    return final_output_path
+
+def retrieve_path_without_manual_output(input_dir: str, new_dir: bool):
+    if new_dir:
+        # do enumeration
+        final_output_path = enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
+    else:
+        final_output_path = Path(input_dir)
+    return final_output_path
+
 # "Procedural" functions
 def determine_txts(input_dir):
     input_path = Path(input_dir)
@@ -119,22 +135,13 @@ def analyze_txts(txt_file_paths: list, url: str, final_format: str):
 def determine_output_path(input_dir: str, output_dir: str, new_dir: bool):
     final_output_path: Path
     if output_dir:
-        preliminary_output_path = Path(output_dir)
-        if not preliminary_output_path.exists():
+        if not Path(output_dir).exists():
             print(output_dir, "does not exist. Please enter an exist output directory if you wish to manually select "
                               "one.")
             exit(1)
-        if new_dir:
-            # do enumeration
-            final_output_path = enumerate_duplicate_paths(preliminary_output_path)
-        else:
-            final_output_path = preliminary_output_path
+        final_output_path = retrieve_path_with_manual_output(output_dir, new_dir)
     else:
-        if new_dir:
-            # do enumeration
-            final_output_path = enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
-        else:
-            final_output_path = Path(input_dir)
+        final_output_path = retrieve_path_without_manual_output(input_dir, new_dir)
     return final_output_path
 
 
