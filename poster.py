@@ -126,13 +126,13 @@ def determine_output_path(input_dir: str, output_dir: str, new_dir: bool):
             exit(1)
         if new_dir:
             # do enumeration
-            final_output_path = Path("")
+            final_output_path = enumerate_duplicate_paths(preliminary_output_path)
         else:
             final_output_path = preliminary_output_path
     else:
         if new_dir:
             # do enumeration
-            final_output_path = Path("")
+            final_output_path = enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
         else:
             final_output_path = Path(input_dir)
     return final_output_path
