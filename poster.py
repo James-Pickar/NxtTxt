@@ -1,23 +1,10 @@
+import json
 import requests
 import argparse
 from pathlib import Path
 
 
 # "Modular" functions
-def get_mode(input_mode: str):
-    output_mode: int = 0o777
-    if not input_mode:
-        return output_mode
-    try:
-        int(input_mode)
-    except ValueError:
-        print(input_mode, "is not a valid unix permission level.")
-        exit(1)
-    else:
-        output_mode = int("0o" + input_mode)
-    return output_mode
-
-
 def server_is_active(url: str):
     state_of_the_server: list
     try:
@@ -45,6 +32,7 @@ def enumerate_duplicate_paths(start_path: Path):
 
     try:
         iteration_number = int(test_path.split()[-1])
+        print("iteration_number", iteration_number)
 
     except (ValueError, IndexError):
         iteration_number = 1
@@ -53,7 +41,7 @@ def enumerate_duplicate_paths(start_path: Path):
     print("    Generating name...")
     while ((parent / test_path).with_suffix(suffix)).exists():
         if ends_in_a_number:
-            test_path = test_path.split()[:-1][0]
+            test_path = " ".join(test_path.split()[:-1])
         test_path += " " + str(iteration_number + 1)
         ends_in_a_number = True
         iteration_number += 1
@@ -61,21 +49,13 @@ def enumerate_duplicate_paths(start_path: Path):
     return (parent / test_path).with_suffix(suffix)
 
 
-def retrieve_path_with_manual_output(output_dir: str, new_dir: bool):
-    if new_dir:
-        # do enumeration
-        final_output_path = enumerate_duplicate_paths(Path(output_dir))
-    else:
-        final_output_path = Path(Path(output_dir))
-    return final_output_path
-
 def retrieve_path_without_manual_output(input_dir: str, new_dir: bool):
     if new_dir:
-        # do enumeration
         final_output_path = enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
     else:
         final_output_path = Path(input_dir)
     return final_output_path
+
 
 # "Procedural" functions
 def determine_txts(input_dir):
@@ -94,17 +74,6 @@ def determine_txts(input_dir):
     return txt_working_list
 
 
-def determine_format(requested_format: str):
-    input_format = "application/xml"
-    if requested_format:
-        if (requested_format == "xml") or (requested_format == "json"):
-            input_format = "application/" + requested_format
-        else:
-            print(requested_format, "is not a valid format. Please enter either xml or json.")
-            exit(1)
-    return input_format
-
-
 def determine_url(address: str, port: int):
     url: str
     if not port:
@@ -119,16 +88,16 @@ def determine_url(address: str, port: int):
     return url
 
 
-def analyze_txts(txt_file_paths: list, url: str, final_format: str):
+def analyze_txts(txt_file_paths: list, url: str):
     analyzed_txts: dir = {}
     headers = {
         "Content-type": "text/plain",
-        "Accept": final_format,
+        "Accept": "application/json"
     }
     for txt_file_path in txt_file_paths:
         data = open(str(txt_file_path), "rb").read()
         response = requests.post(url, headers=headers, data=data)
-        analyzed_txts.update([(txt_file_path.name, response)])
+        analyzed_txts.update([(txt_file_path.with_suffix(".json").name, response)])
     return analyzed_txts
 
 
@@ -139,17 +108,22 @@ def determine_output_path(input_dir: str, output_dir: str, new_dir: bool):
             print(output_dir, "does not exist. Please enter an exist output directory if you wish to manually select "
                               "one.")
             exit(1)
-        final_output_path = retrieve_path_with_manual_output(output_dir, new_dir)
+        final_output_path = Path(output_dir)
     else:
         final_output_path = retrieve_path_without_manual_output(input_dir, new_dir)
     return final_output_path
 
 
-def touch_files(analysis_list: list, directory_path: Path, mode: int):
+def create_output_dir(output_dir: Path):
+    if not output_dir.exists():
+        output_dir.mkdir()
+
+
+def create_files(analysis_list: dir, output_dir: Path):
     for analysis_path in analysis_list:
-        created_path = directory_path.joinpath(analysis_path)
-        created_path.touch(mode)
-        # analysis_list[analysis_path].key
+        created_path = enumerate_duplicate_paths(output_dir.joinpath(analysis_path))
+        created_path.touch()
+        created_path.write_text(json.dumps(analysis_list[analysis_path].json()))
 
 
 if __name__ == "__main__":
@@ -161,18 +135,17 @@ if __name__ == "__main__":
                                                                             "is running.")
     parser.add_argument("-p", metavar="Server port", type=int, help="Port of server on which the sa-engine "
                                                                     "is running. Defaults to 8080.")
-    parser.add_argument("-f", metavar="Output format", type=str, help="The output type of the request, either xml or "
-                                                                      "json. Defaults to xml")
     parser.add_argument("-nd", action="store_true", help="Places analyzed text files into new directory with same "
                                                          "name as original directory but with 'analyzed txts' on the "
                                                          "end(Defaults to false).")
-    parser.add_argument("--output", metavar="Output directory path", type=str, help="Path of directory to place "
-                                                                                    "analyzed txts into files to ("
-                                                                                    "Defaults to same as input).")
-    args = parser.parse_args()
+    parser.add_argument("-output", metavar="Output directory path", type=str, help="Path of directory to place "
+                                                                                   "analyzed txts into files to ("
+                                                                                   "Defaults to same as input).")
 
+    args = parser.parse_args()
     files = determine_txts(args.input)
-    output_format = determine_format(args.f)
     output_url = determine_url(args.address, args.p)
-    analysis = analyze_txts(files, output_url, output_format)
+    analysis = analyze_txts(files, output_url)
     output_path = determine_output_path(args.input, args.output, args.nd)
+    create_output_dir(output_path)
+    create_files(analysis, output_path)
