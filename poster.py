@@ -58,7 +58,8 @@ def retrieve_path_without_manual_output(input_dir: str, new_dir: bool):
 
 
 # "Procedural" functions
-def determine_txts(input_dir):
+def determine_txts(input_dir: str):
+    print("Identifying TXT files... ")
     input_path = Path(input_dir)
     if not input_path.exists():
         print(input_dir, "is not a valid path.")
@@ -68,27 +69,32 @@ def determine_txts(input_dir):
         exit(1)
 
     txt_working_list: list = []
+    print("    TXTs in", input_dir + ":")
     for child in input_path.iterdir():
         if child.suffix == ".txt":
             txt_working_list.append(child)
+            print("       ", child)
     return txt_working_list
 
 
 def determine_url(address: str, port: int):
+    print("Identifying server...")
     url: str
     if not port:
-        url = "http://" + address + ":8080/api/v1/articles/analyzeText"
+        url = "http://" + address + ":8080"
     else:
-        url = "http://" + address + ":" + str(port) + "/api/v1/articles/analyzeText"
-
-    server_active = server_is_active(url)
+        url = "http://" + address + ":" + str(port)
+    print("    Attempting to connect to", url + "...")
+    server_active = server_is_active(url + "/management/health")
     if not server_active[0]:
         print(server_active[1])
         exit(1)
-    return url
+    print("    Connection successful.")
+    return url + "/api/v1/articles/analyzeText"
 
 
 def analyze_txts(txt_file_paths: list, url: str):
+    print("Requesting analysis...")
     analyzed_txts: dir = {}
     headers = {
         "Content-type": "text/plain",
@@ -96,12 +102,15 @@ def analyze_txts(txt_file_paths: list, url: str):
     }
     for txt_file_path in txt_file_paths:
         data = open(str(txt_file_path), "rb").read()
+        print("    Analyzing", str(txt_file_path) + "...")
         response = requests.post(url, headers=headers, data=data)
         analyzed_txts.update([(txt_file_path.with_suffix(".json").name, response)])
+    print("    Analysis complete.")
     return analyzed_txts
 
 
 def determine_output_path(input_dir: str, output_dir: str, new_dir: bool):
+    print("Identifying output directory...")
     final_output_path: Path
     if output_dir:
         if not Path(output_dir).exists():
@@ -111,19 +120,25 @@ def determine_output_path(input_dir: str, output_dir: str, new_dir: bool):
         final_output_path = Path(output_dir)
     else:
         final_output_path = retrieve_path_without_manual_output(input_dir, new_dir)
+    print("    Output directory will be", str(final_output_path) + ".")
     return final_output_path
 
 
 def create_output_dir(output_dir: Path):
     if not output_dir.exists():
-        output_dir.mkdir()
+        output_dir.mkdir(parents=True)
+        print("    Output directory created.")
 
 
 def create_files(analysis_list: dir, output_dir: Path):
+    print("Creating analyzed files...")
     for analysis_path in analysis_list:
         created_path = enumerate_duplicate_paths(output_dir.joinpath(analysis_path))
+        print("    Creating", str(created_path) + "...")
         created_path.touch()
+        print("    Writing analysis...")
         created_path.write_text(json.dumps(analysis_list[analysis_path].json()))
+    print("    Analysis complete!")
 
 
 if __name__ == "__main__":
@@ -149,3 +164,4 @@ if __name__ == "__main__":
     output_path = determine_output_path(args.input, args.output, args.nd)
     create_output_dir(output_path)
     create_files(analysis, output_path)
+    print("Process complete.")
