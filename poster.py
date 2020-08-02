@@ -104,8 +104,11 @@ def analyze_txts(txt_file_paths: list, url: str):
         data = open(str(txt_file_path), "rb").read()
         print("    Analyzing", str(txt_file_path) + "...")
         response = requests.post(url, headers=headers, data=data)
-        analyzed_txts.update([(txt_file_path.with_suffix(".json").name, response)])
-    print("    Analysis complete.")
+        if response.status_code == requests.codes.ok:
+            analyzed_txts.update([(txt_file_path.with_suffix(".json").name, response)])
+        else:
+            print("    Request for analysis of", str(txt_file_path), "failed with error code:", response.status_code)
+
     return analyzed_txts
 
 
