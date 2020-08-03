@@ -32,7 +32,6 @@ def enumerate_duplicate_paths(start_path: Path):
 
     try:
         iteration_number = int(test_path.split()[-1])
-        print("iteration_number", iteration_number)
 
     except (ValueError, IndexError):
         iteration_number = 1
@@ -161,6 +160,7 @@ if __name__ == "__main__":
                                                                                    "Defaults to same as input).")
 
     args = parser.parse_args()
+
     files = determine_txts(args.input)
     output_url = determine_url(args.address, args.p)
     analysis = analyze_txts(files, output_url)
