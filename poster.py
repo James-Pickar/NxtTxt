@@ -165,6 +165,7 @@ if __name__ == "__main__":
     output_url = determine_url(args.address, args.p)
     analysis = analyze_txts(files, output_url)
     output_path = determine_output_path(args.input, args.output, args.nd)
+
     create_output_dir(output_path)
     create_files(analysis, output_path)
     print("Process complete.")

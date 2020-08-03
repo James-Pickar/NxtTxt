@@ -5,20 +5,6 @@ import time
 
 
 # "Modular" functions (used multiple times each)
-def get_mode(input_mode: str):
-    output_mode: int = 0o777
-    if not input_mode:
-        return output_mode
-    try:
-        int(input_mode)
-    except ValueError:
-        print(input_mode, "is not a valid unix permission level.")
-        exit(1)
-    else:
-        output_mode = int("0o" + input_mode)
-    return output_mode
-
-
 def enumerate_duplicate_paths(start_path: str):
     test_path = str(Path(start_path).with_suffix(''))
     start_suffixes = Path(start_path).suffixes
@@ -104,24 +90,22 @@ def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
     return final_path
 
 
-def create_output_directory(output_path: Path, mode: str, pdfs_list: list, new_dir: bool):
+def create_output_directory(output_path: Path, pdfs_list: list):
     print("Creating output directory...")
     pdfs_list_count: int = len(pdfs_list)
     if pdfs_list_count > 0 and args.nd:
-        output_path.mkdir(get_mode(mode))
+        output_path.mkdir()
         print("Output directory created.")
     elif not (pdfs_list_count > 0):
         print("No PDFs found in", args.input)
         exit(0)
-    elif (not new_dir) and mode:
-        print("Mode preference will be ignored, since a new directory was not requested.")
 
 
-def extract_text(pdf_paths: list, output_path: Path, input_path: str, input_mode: str, max_extraction_time: float):
+def extract_text(pdf_paths: list, output_path: Path, input_path: str, max_extraction_time: float):
     print("Extracting text...")
     for pdf_path in pdf_paths:
         txt_path = enumerate_duplicate_paths(str(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt"))))
-        txt_path.touch(get_mode(input_mode), False)
+        txt_path.touch()
         print("   ", pdf_path, "->", txt_path)
 
         pdf_reader = PyPDF2.PdfFileReader(str(pdf_path))
@@ -160,20 +144,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extracts text from all PDFs in a directory.")
     parser.add_argument("input", metavar="Input directory path", type=str, help="Path of directory with PDFs to "
                                                                                 "extract.")
-    parser.add_argument("--output", metavar="Output directory path", type=str, help="Path of directory to extract "
-                                                                                    "files to (Defaults to same as "
-                                                                                    "input).")
+    parser.add_argument("-output", metavar="Output directory path", type=str, help="Path of directory to extract "
+                                                                                   "files to (Defaults to same as "
+                                                                                   "input).")
     parser.add_argument("-nd", action="store_true", help="Places extracted text files into new directory with same "
                                                          "name as pdf file(Defaults to false).")
-    parser.add_argument("--mode", metavar="Permission", type=str, help="Unix permission level for new directory ("
-                                                                       "Defaults to 777)")
-    parser.add_argument("--timeout", metavar="Extraction time limit", type=float, help="Restricts the time for the "
-                                                                                       "extraction of each PDF to the "
-                                                                                       "inputted value in seconds.")
+    parser.add_argument("-timeout", metavar="Extraction time limit", type=float, help="Restricts the time for the "
+                                                                                      "extraction of each PDF to the "
+                                                                                      "inputted value in seconds.")
     args = parser.parse_args()
 
     pdfs = determine_pdfs(Path(args.input))
     output_dir_path = generate_output_path(Path(args.input), args.output, args.nd)
 
-    create_output_directory(output_dir_path, args.mode, pdfs, args.nd)
-    extract_text(pdfs, output_dir_path, args.input, args.mode, args.timeout)
+    create_output_directory(output_dir_path, pdfs)
+    extract_text(pdfs, output_dir_path, args.input, args.timeout)
