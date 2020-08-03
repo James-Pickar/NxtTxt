@@ -61,30 +61,14 @@ def generate_output_path(input_file: Path, manual_path: str):
 
 
 # Create output folder
-def create_output_directory(output_file: Path, mode: str):
+def create_output_directory(output_file: Path):
     print("Creating output directory...")
-    print("    Checking if mode preference was expressed...")
-
-    if not mode:
-        print("    Creating directory...")
-        output_file.mkdir()
-
-    else:
-        try:
-            mode_int = int(mode)
-
-        except ValueError:
-            print(Back.RED + Fore.BLACK + Style.BRIGHT + mode, "is not a valid unix permission level."
-                  + Style.RESET_ALL)
-            exit(1)
-        else:
-            print("    Creating directory...")
-            output_file.mkdir(mode_int)
-    print("Output directory created.")
+    output_file.mkdir()
+    print("    Output directory created.")
 
 
 # Unzip documents into folder
-def unzip_file(input_file: str, output_file: Path, mode: str):
+def unzip_file(input_file: str, output_file: Path):
     print("Unzipping files into output directory...")
     try:
         print("    Extracting...")
@@ -96,12 +80,6 @@ def unzip_file(input_file: str, output_file: Path, mode: str):
         if new_dir:
             output_file.rmdir()
         exit(1)
-
-    except PermissionError:
-        print(Back.RED + Fore.BLACK + Style.BRIGHT + "Permission level ", mode,
-              "makes the input file or output directory "
-              "inaccessible to this script. Try running "
-              "as root." + Style.RESET_ALL)
         if new_dir:
             output_file.rmdir()
         exit(1)
@@ -119,20 +97,17 @@ if __name__ == "__main__":
                         help="Path of directory to unzip files to (Defaults to same as input).")
     parser.add_argument("-nd", action="store_true",
                         help="Places unzipped files into new directory with same name as zip file(Defaults to false).")
-    parser.add_argument("--mode", metavar="Permission", type=str, help="Unix permission level (Defaults to 777)")
+
     args = parser.parse_args()
 
     # Create input variables
     zip_file_path = args.input
     output_file_path = args.output
     new_dir = args.nd
-    output_mode = args.mode
+
 
     # Use inputs to unzip file correctly
     output_path: Path = generate_output_path(Path(zip_file_path), output_file_path)
     if new_dir:
-        create_output_directory(output_path, output_mode)
-    elif output_mode:
-        print(Back.YELLOW + Fore.BLACK + Style.BRIGHT + "Mode preference will be ignored, since a new directory was "
-                                                        "not requested." + Style.RESET_ALL)
-    unzip_file(zip_file_path, output_path, output_mode)
+        create_output_directory(output_path)
+    unzip_file(zip_file_path, output_path)
