@@ -1,4 +1,5 @@
 import json
+import nxttxt
 import requests
 import argparse
 from pathlib import Path
@@ -23,34 +24,9 @@ def server_is_active(url: str):
     return state_of_the_server
 
 
-def enumerate_duplicate_paths(start_path: Path):
-    parent = start_path.parent
-    suffix = "".join(start_path.suffixes)
-    test_path = start_path.with_suffix('').name
-
-    ends_in_a_number: bool = True
-
-    try:
-        iteration_number = int(test_path.split()[-1])
-
-    except (ValueError, IndexError):
-        iteration_number = 1
-        ends_in_a_number = False
-
-    print("    Generating name...")
-    while ((parent / test_path).with_suffix(suffix)).exists():
-        if ends_in_a_number:
-            test_path = " ".join(test_path.split()[:-1])
-        test_path += " " + str(iteration_number + 1)
-        ends_in_a_number = True
-        iteration_number += 1
-
-    return (parent / test_path).with_suffix(suffix)
-
-
 def retrieve_path_without_manual_output(input_dir: str, new_dir: bool):
     if new_dir:
-        final_output_path = enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
+        final_output_path = nxttxt.enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
     else:
         final_output_path = Path(input_dir)
     return final_output_path
@@ -135,7 +111,7 @@ def create_output_dir(output_dir: Path):
 def create_files(analysis_list: dir, output_dir: Path):
     print("Creating analyzed files...")
     for analysis_path in analysis_list:
-        created_path = enumerate_duplicate_paths(output_dir.joinpath(analysis_path))
+        created_path = nxttxt.enumerate_duplicate_paths(output_dir.joinpath(analysis_path))
         print("    Creating", str(created_path) + "...")
         created_path.touch()
         print("    Writing analysis...")

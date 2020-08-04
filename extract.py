@@ -1,35 +1,11 @@
+from pathlib import Path
 import argparse
 import PyPDF2
-from pathlib import Path
+import nxttxt
 import time
 
 
 # "Modular" functions (used multiple times each)
-def enumerate_duplicate_paths(start_path: Path):
-    parent = start_path.parent
-    suffix = "".join(start_path.suffixes)
-    test_path = start_path.with_suffix('').name
-
-    ends_in_a_number: bool = True
-
-    try:
-        iteration_number = int(test_path.split()[-1])
-
-    except (ValueError, IndexError):
-        iteration_number = 1
-        ends_in_a_number = False
-
-    print("    Generating name...")
-    while ((parent / test_path).with_suffix(suffix)).exists():
-        if ends_in_a_number:
-            test_path = " ".join(test_path.split()[:-1])
-        test_path += " " + str(iteration_number + 1)
-        ends_in_a_number = True
-        iteration_number += 1
-
-    return (parent / test_path).with_suffix(suffix)
-
-
 # "Procedural" functions(called once each)
 def determine_pdfs(input_path: Path):
     print("Reading input directory.")
@@ -80,7 +56,7 @@ def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
             parent_path = input_path
         test_path = parent_path / (input_path.stem + " extracted pdfs")
 
-        final_path = enumerate_duplicate_paths(test_path)
+        final_path = nxttxt.enumerate_duplicate_paths(test_path)
     print("    Output directory name generated as", str(final_path) + ".")
     return final_path
 
@@ -99,7 +75,7 @@ def create_output_directory(output_path: Path, pdfs_list: list):
 def extract_text(pdf_paths: list, output_path: Path, input_path: str, max_extraction_time: float):
     print("Extracting text...")
     for pdf_path in pdf_paths:
-        txt_path = enumerate_duplicate_paths(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt")))
+        txt_path = nxttxt.enumerate_duplicate_paths(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt")))
         txt_path.touch()
         print("   ", pdf_path, "->", txt_path)
 

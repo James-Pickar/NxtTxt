@@ -1,20 +1,21 @@
 import time
 import argparse
 import zipfile
+import nxttxt
 from pathlib import Path
-from colorama import Fore, Back, Style
 
 startTime = time.time()
 
 
-def generate_output_path(input_file: Path, manual_path: str):
+def generate_output_path(input_file: str, manual_path: str):
     print("Generating Output Path...")
+    input_path = Path(input_file)
     print("    Checking if zipfile exists...")
-    if not input_file.exists():
-        print(Back.RED + Fore.BLACK + Style.BRIGHT + str(input_file), "is not a valid file path." + Style.RESET_ALL)
+    if not input_path.exists():
+        print(input_file, "is not a valid file path.")
         exit(1)
     if manual_path and (not Path(manual_path).is_dir()):
-        print(Back.RED + Fore.BLACK + Style.BRIGHT + manual_path, "is not a valid output directory." + Style.RESET_ALL)
+        print(manual_path, "is not a valid output directory.")
         exit(1)
 
     final_path: Path
@@ -22,49 +23,25 @@ def generate_output_path(input_file: Path, manual_path: str):
         if manual_path:
             final_path = Path(manual_path)
         else:
-            final_path = input_file.parent
+            final_path = input_path.parent
     else:
-        test_path: str
+        test_path: Path
         if manual_path:
             print("    Generating path from manual input and zipfile name.")
-            test_path = str(Path(manual_path).joinpath(input_file.stem))
+            test_path = Path(manual_path).joinpath(input_path.stem)
         else:
             print("    Removing file extension...")
-            test_path = str(input_file.with_suffix(''))
-
-        ends_in_a_number: bool
-
-        try:
-            last_number = test_path.split()[-1]
-            iteration_number = int(last_number)
-
-        except (ValueError, IndexError):
-            iteration_number = 1
-            ends_in_a_number = False
-        else:
-            ends_in_a_number = True
-
-        print("    Checking if there is already a directory by the same name as the zip file...")
-        print("    Generating name...")
-        while Path(test_path).exists():
-            if ends_in_a_number:
-                test_path = test_path[:-1].strip()
-
-            test_path = test_path + " " + str(iteration_number + 1)
-            ends_in_a_number = True
-
-            iteration_number += 1
-
-        final_path = Path(test_path)
-    print("    Output directory name generated as", str(final_path) + ".")
+            test_path = input_path.with_suffix('')
+        final_path = nxttxt.enumerate_duplicate_paths(test_path)
     return final_path
 
 
 # Create output folder
 def create_output_directory(output_file: Path):
-    print("Creating output directory...")
-    output_file.mkdir()
-    print("    Output directory created.")
+    if new_dir:
+        print("Creating output directory...")
+        output_file.mkdir()
+        print("    Output directory created.")
 
 
 # Unzip documents into folder
@@ -75,21 +52,15 @@ def unzip_file(input_file: str, output_file: Path):
         zipfile.ZipFile(input_file, 'r').extractall(output_file)
 
     except (zipfile.BadZipFile, FileNotFoundError):
-        print(Back.RED + Fore.BLACK + Style.BRIGHT + input_file,
-              "does appear to be a valid zip file." + Style.RESET_ALL)
+        print(input_file, "does appear to be a valid zip file.")
         if new_dir:
             output_file.rmdir()
         exit(1)
-        if new_dir:
-            output_file.rmdir()
-        exit(1)
-
-    print(Back.GREEN + Fore.BLACK + Style.BRIGHT + "    ", input_file, " unzipped to ", str(output_file), " in ",
-          time.time() - startTime, "seconds (including user input)." + Style.RESET_ALL)
+    print("    ", input_file, " unzipped to ", str(output_file), " in ", time.time() - startTime, "seconds (including "
+                                                                                                  "user input).")
 
 
 if __name__ == "__main__":
-
     # Process arguments from call
     parser = argparse.ArgumentParser(description="Unzips files.")
     parser.add_argument("input", metavar="Zip file path", type=str, help="Path of file to unzip")
@@ -105,9 +76,7 @@ if __name__ == "__main__":
     output_file_path = args.output
     new_dir = args.nd
 
-
     # Use inputs to unzip file correctly
     output_path: Path = generate_output_path(Path(zip_file_path), output_file_path)
-    if new_dir:
-        create_output_directory(output_path)
+    create_output_directory(output_path)
     unzip_file(zip_file_path, output_path)
