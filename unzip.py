@@ -7,7 +7,7 @@ from pathlib import Path
 startTime = time.time()
 
 
-def generate_output_path(input_file: str, manual_path: str):
+def generate_output_path(input_file: str, manual_path: str) -> Path:
     print("Generating Output Path...")
     input_path = Path(input_file)
     print("    Checking if zipfile exists...")

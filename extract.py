@@ -7,7 +7,7 @@ import time
 
 # "Modular" functions (used multiple times each)
 # "Procedural" functions(called once each)
-def determine_pdfs(input_path: Path):
+def determine_pdfs(input_path: Path) -> list:
     print("Reading input directory.")
     print("    Verifying input path is a readable directory...")
     if not input_path.exists():
@@ -34,7 +34,7 @@ def determine_pdfs(input_path: Path):
     return pdfs_working_list
 
 
-def generate_output_path(input_path: Path, manual_path: str, new_dir: bool):
+def generate_output_path(input_path: Path, manual_path: str, new_dir: bool) -> Path:
     print("Generating Output Path...")
 
     if manual_path and (not Path(manual_path).is_dir()):

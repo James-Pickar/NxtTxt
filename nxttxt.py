@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def enumerate_duplicate_paths(start_path: Path):
+def enumerate_duplicate_paths(start_path: Path) -> Path:
     parent = start_path.parent
     suffix = "".join(start_path.suffixes)
     test_path = start_path.with_suffix('').name
@@ -24,3 +24,16 @@ def enumerate_duplicate_paths(start_path: Path):
         iteration_number += 1
 
     return (parent / test_path).with_suffix(suffix)
+
+
+def is_valid_path(path: Path, should_be_dir: bool) -> bool:
+    if path.exists():
+        if should_be_dir:
+            if path.is_dir():
+                return True
+            else:
+                return False
+        else:
+            return True
+    else:
+        return False

@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 # "Modular" functions
-def server_is_active(url: str):
+def server_is_active(url: str) -> list:
     state_of_the_server: list
     try:
         requests.get(url)
@@ -24,7 +24,7 @@ def server_is_active(url: str):
     return state_of_the_server
 
 
-def retrieve_path_without_manual_output(input_dir: str, new_dir: bool):
+def retrieve_path_without_manual_output(input_dir: str, new_dir: bool) -> Path:
     if new_dir:
         final_output_path = nxttxt.enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
     else:
@@ -33,7 +33,7 @@ def retrieve_path_without_manual_output(input_dir: str, new_dir: bool):
 
 
 # "Procedural" functions
-def determine_txts(input_dir: str):
+def determine_txts(input_dir: str) -> list:
     print("Identifying TXT files... ")
     input_path = Path(input_dir)
     if not input_path.exists():
@@ -52,7 +52,7 @@ def determine_txts(input_dir: str):
     return txt_working_list
 
 
-def determine_url(address: str, port: int):
+def determine_url(address: str, port: int) -> str:
     print("Identifying server...")
     url: str
     if not port:
@@ -68,7 +68,7 @@ def determine_url(address: str, port: int):
     return url + "/api/v1/articles/analyzeText"
 
 
-def analyze_txts(txt_file_paths: list, url: str):
+def analyze_txts(txt_file_paths: list, url: str) -> dict:
     print("Requesting analysis...")
     analyzed_txts: dir = {}
     headers = {
@@ -87,7 +87,7 @@ def analyze_txts(txt_file_paths: list, url: str):
     return analyzed_txts
 
 
-def determine_output_path(input_dir: str, output_dir: str, new_dir: bool):
+def determine_output_path(input_dir: str, output_dir: str, new_dir: bool) -> Path:
     print("Identifying output directory...")
     final_output_path: Path
     if output_dir:
