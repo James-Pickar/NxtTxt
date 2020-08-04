@@ -27,13 +27,10 @@ def enumerate_duplicate_paths(start_path: Path) -> Path:
 
 
 def is_valid_path(path: Path, should_be_dir: bool) -> bool:
-    if path.exists():
-        if should_be_dir:
-            if path.is_dir():
-                return True
-            else:
-                return False
-        else:
-            return True
-    else:
+    if not path.exists():
         return False
+    if should_be_dir:
+        if path.is_dir():
+            return True
+        return False
+    return True
