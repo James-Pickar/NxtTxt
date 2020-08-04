@@ -10,42 +10,25 @@ startTime = time.time()
 def generate_output_path(input_file: str, manual_path: str) -> Path:
     print("Generating Output Path...")
     input_path = Path(input_file)
-    print("    Checking if zipfile exists...")
-    if not input_path.exists():
-        print(input_file, "is not a valid file path.")
-        exit(1)
-    if manual_path and (not Path(manual_path).is_dir()):
-        print(manual_path, "is not a valid output directory.")
-        exit(1)
-
-    final_path: Path
-    if not new_dir:
-        if manual_path:
-            final_path = Path(manual_path)
-        else:
-            final_path = input_path.parent
-    else:
-        test_path: Path
-        if manual_path:
-            print("    Generating path from manual input and zipfile name.")
-            test_path = Path(manual_path).joinpath(input_path.stem)
-        else:
-            print("    Removing file extension...")
-            test_path = input_path.with_suffix('')
-        final_path = nxttxt.enumerate_duplicate_paths(test_path)
-    return final_path
+    if manual_path:
+        if new_dir:
+            print("New directory request will be ignored since an output path was chosen manually.")
+        return Path(manual_path)
+    if new_dir:
+        return nxttxt.enumerate_duplicate_paths(input_path.with_suffix(''))
+    return input_path.parent
 
 
 # Create output folder
-def create_output_directory(output_file: Path):
-    if new_dir:
+def create_output_directory(output_file: Path, manual_dir: str):
+    if new_dir and (not manual_dir):
         print("Creating output directory...")
         output_file.mkdir()
         print("    Output directory created.")
 
 
 # Unzip documents into folder
-def unzip_file(input_file: str, output_file: Path):
+def unzip_file(input_file: str, output_file: Path, manual_dir: str):
     print("Unzipping files into output directory...")
     try:
         print("    Extracting...")
@@ -53,7 +36,7 @@ def unzip_file(input_file: str, output_file: Path):
 
     except (zipfile.BadZipFile, FileNotFoundError):
         print(input_file, "does appear to be a valid zip file.")
-        if new_dir:
+        if new_dir and (not manual_dir):
             output_file.rmdir()
         exit(1)
     print("    ", input_file, " unzipped to ", str(output_file), " in ", time.time() - startTime, "seconds (including "
@@ -75,8 +58,12 @@ if __name__ == "__main__":
     zip_file_path = args.input
     output_file_path = args.output
     new_dir = args.nd
+    auth = nxttxt.authenticate_instructional_validity(zip_file_path, output_file_path)
 
     # Use inputs to unzip file correctly
-    output_path: Path = generate_output_path(Path(zip_file_path), output_file_path)
-    create_output_directory(output_path)
-    unzip_file(zip_file_path, output_path)
+    if auth[0]:
+        output_path: Path = generate_output_path(zip_file_path, output_file_path)
+        create_output_directory(output_path, output_file_path)
+        unzip_file(zip_file_path, output_path, output_file_path)
+    else:
+        print(auth[1])
