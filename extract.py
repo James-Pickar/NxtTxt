@@ -9,20 +9,24 @@ import time
 def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
     print("Authenticate validity of entered paths...")
     input_path = Path(input_dir)
+    result: list = []
     if nxttxt.is_valid_path(input_path, True) and (not output_dir):
-        return [True, None]
-    if nxttxt.is_valid_path(input_path, True) and nxttxt.is_valid_path(Path(output_dir), True):
-        return [True, None]
-    if nxttxt.is_valid_path(input_path, True) and (not nxttxt.is_valid_path(Path(output_dir), True)):
-        return [False, "The specified output path is not valid."]
-    if not nxttxt.is_valid_path(input_path, True):
-        return [False, "The specified input path is not a directory."]
-    if not nxttxt.is_valid_path(input_path, False):
-        return [False, "The specified output path is not valid."]
+        result = [True, None]
+    else:
+        if nxttxt.is_valid_path(input_path, True) and nxttxt.is_valid_path(Path(output_dir), True):
+            result = [True, None]
+        if nxttxt.is_valid_path(input_path, True) and (not nxttxt.is_valid_path(Path(output_dir), True)):
+            result = [False, "The specified output path is not valid."]
+        if not nxttxt.is_valid_path(input_path, True):
+            result = [False, "The specified input path is not a directory."]
+        if not nxttxt.is_valid_path(input_path, False):
+            result = [False, "The specified output path is not valid."]
+    return result
 
 
-def determine_pdfs(input_path: Path) -> list:
+def determine_pdfs(input_dir: str) -> list:
     print("Reading input directory...")
+    input_path = Path(input_dir)
     pdfs_working_list: list = []
     print("    Identifying PDF files...")
     for child in input_path.iterdir():
@@ -38,7 +42,7 @@ def determine_pdfs(input_path: Path) -> list:
     print("PDFs list compiled.")
     return pdfs_working_list
 
-
+"""
 def generate_output_path(input_path: Path, manual_path: str, new_dir: bool) -> Path:
     print("Generating Output Path...")
 
@@ -63,6 +67,22 @@ def generate_output_path(input_path: Path, manual_path: str, new_dir: bool) -> P
 
         final_path = nxttxt.enumerate_duplicate_paths(test_path)
     print("    Output directory name generated as", str(final_path) + ".")
+    return final_path
+"""
+
+
+def generate_output_path(input_dir: str, manual_path: str, new_dir: bool) -> Path:
+    print("Generating Output Path...")
+    input_path = Path(input_dir)
+    final_path: Path
+    if manual_path:
+        final_path = Path(manual_path)
+    elif new_dir:
+        test_path = input_path.parent / (input_path.stem + " extracted pdfs")
+        final_path = nxttxt.enumerate_duplicate_paths(test_path)
+    else:
+        final_path = input_path
+    print("    Output path generated as", final_path, ".")
     return final_path
 
 
@@ -132,7 +152,7 @@ if __name__ == "__main__":
 
     auth = authenticate_instructional_validity(args.input, args.output)
     if auth[0]:
-        pdfs = determine_pdfs(Path(args.input))
+        pdfs = determine_pdfs(args.input)
         output_dir_path = generate_output_path(Path(args.input), args.output, args.nd)
 
         create_output_directory(output_dir_path, pdfs)
