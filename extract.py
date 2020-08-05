@@ -9,17 +9,14 @@ import time
 def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
     print("Authenticate validity of entered paths...")
     input_path = Path(input_dir)
-    result: list = []
-    if nxttxt.is_valid_path(input_path, True) and (not output_dir):
-        result = [True, None]
-    if nxttxt.is_valid_path(input_path, True) and nxttxt.is_valid_path(Path(output_dir), True):
-        result = [True, None]
     if nxttxt.is_valid_path(input_path, True) and (not nxttxt.is_valid_path(Path(output_dir), True)):
         result = [False, "The specified output path is not valid."]
-    if not nxttxt.is_valid_path(input_path, True):
-        result = [False, "The specified input path is not a directory."]
-    if not nxttxt.is_valid_path(input_path, False):
+    elif not nxttxt.is_valid_path(input_path, False):
         result = [False, "The specified output path is not valid."]
+    elif not nxttxt.is_valid_path(input_path, True):
+        result = [False, "The specified input path is not a directory."]
+    else:
+        result = [True, None]
     return result
 
 
@@ -40,35 +37,6 @@ def determine_pdfs(input_dir: str) -> list:
 
     print("PDFs list compiled.")
     return pdfs_working_list
-
-
-"""
-def generate_output_path(input_path: Path, manual_path: str, new_dir: bool) -> Path:
-    print("Generating Output Path...")
-
-    if manual_path and (not Path(manual_path).is_dir()):
-        print(manual_path, "is not a valid output directory.")
-        exit(1)
-
-    final_path: Path
-    if not new_dir:
-        if manual_path:
-            final_path = Path(manual_path)
-        else:
-            final_path = input_path
-    else:
-        parent_path: Path
-        if manual_path:
-            print("    Generating path from manual input and directory name.")
-            parent_path = Path(manual_path)
-        else:
-            parent_path = input_path
-        test_path = parent_path / (input_path.stem + " extracted pdfs")
-
-        final_path = nxttxt.enumerate_duplicate_paths(test_path)
-    print("    Output directory name generated as", str(final_path) + ".")
-    return final_path
-"""
 
 
 def generate_output_path(input_dir: str, manual_path: str, new_dir: bool) -> Path:
