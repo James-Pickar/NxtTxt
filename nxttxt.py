@@ -34,14 +34,3 @@ def enumerate_duplicate_paths(start_path: Path) -> Path:
         iteration_number += 1
 
     return (parent / test_path).with_suffix(suffix)
-
-
-def authenticate_instructional_validity(input_file: str, manual_output: str) -> list:
-    input_path = Path(input_file)
-    if is_valid_path(input_path, False):
-        if not manual_output:
-            return [True, None]
-        if is_valid_path(Path(manual_output), True):
-            return [True, None]
-        return [False, "The specified output path is not valid."]
-    return [False, "The zipfile path entered is not valid."]

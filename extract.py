@@ -5,18 +5,23 @@ import nxttxt
 import time
 
 
-# "Modular" functions (used multiple times each)
 # "Procedural" functions(called once each)
-def determine_pdfs(input_path: Path) -> list:
-    print("Reading input directory.")
-    print("    Verifying input path is a readable directory...")
-    if not input_path.exists():
-        print(str(input_path), "is not a valid file path.")
-        exit(1)
-    elif not input_path.is_dir():
-        print(str(input_path), "is not a directory, it is either a file, or it is a broken symbolic link.")
-        exit(1)
+def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
+    print("Authenticate validity of entered paths...")
+    input_path = Path(input_dir)
+    if nxttxt.is_valid_path(input_path, False):
+        if nxttxt.is_valid_path(input_path, True):
+            if not output_dir:
+                return [True, None]
+            if nxttxt.is_valid_path(Path(output_dir), True):
+                return [True, None]
+            return [False, "The specified output path is not valid."]
+        return [False, "The specified input path is not a directory."]
+    return [False, "The specified input path is not valid."]
 
+
+def determine_pdfs(input_path: Path) -> list:
+    print("Reading input directory...")
     pdfs_working_list: list = []
     print("    Identifying PDF files...")
     for child in input_path.iterdir():
@@ -125,8 +130,12 @@ if __name__ == "__main__":
                                                                                       "inputted value in seconds.")
     args = parser.parse_args()
 
-    pdfs = determine_pdfs(Path(args.input))
-    output_dir_path = generate_output_path(Path(args.input), args.output, args.nd)
+    auth = authenticate_instructional_validity(args.input, args.output)
+    if auth[0]:
+        pdfs = determine_pdfs(Path(args.input))
+        output_dir_path = generate_output_path(Path(args.input), args.output, args.nd)
 
-    create_output_directory(output_dir_path, pdfs)
-    extract_text(pdfs, output_dir_path, args.input, args.timeout)
+        create_output_directory(output_dir_path, pdfs)
+        extract_text(pdfs, output_dir_path, args.input, args.timeout)
+    else:
+        print(auth[1])

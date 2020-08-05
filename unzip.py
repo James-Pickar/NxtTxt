@@ -6,6 +6,15 @@ from pathlib import Path
 
 startTime = time.time()
 
+def authenticate_instructional_validity(input_file: str, manual_output: str) -> list:
+    input_path = Path(input_file)
+    if nxttxt.is_valid_path(input_path, False):
+        if not manual_output:
+            return [True, None]
+        if nxttxt.is_valid_path(Path(manual_output), True):
+            return [True, None]
+        return [False, "The specified output path is not valid."]
+    return [False, "The file path entered is not valid."]
 
 def generate_output_path(input_file: str, manual_path: str) -> Path:
     print("Generating Output Path...")
@@ -58,7 +67,7 @@ if __name__ == "__main__":
     zip_file_path = args.input
     output_file_path = args.output
     new_dir = args.nd
-    auth = nxttxt.authenticate_instructional_validity(zip_file_path, output_file_path)
+    auth = authenticate_instructional_validity(zip_file_path, output_file_path)
 
     # Use inputs to unzip file correctly
     if auth[0]:
