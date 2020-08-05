@@ -11,7 +11,7 @@ def authenticate_instructional_validity(input_file: str, manual_output: str) -> 
     input_path = Path(input_file)
     if not nxttxt.is_valid_path(input_path, False):
         return [False, "The file path entered is not valid."]
-    elif input_path.is_dir():
+    elif nxttxt.is_valid_path(input_path, True):
         return [False, "The file path entered is a directory and a file."]
     elif not nxttxt.is_valid_path(Path(manual_output), True):
         return [False, "The specified output path is not valid."]

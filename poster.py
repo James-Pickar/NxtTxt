@@ -33,16 +33,23 @@ def retrieve_path_without_manual_output(input_dir: str, new_dir: bool) -> Path:
 
 
 # "Procedural" functions
+def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
+    print("Authenticate validity of entered paths...")
+    input_path = Path(input_dir)
+    if nxttxt.is_valid_path(input_path, True) and (not nxttxt.is_valid_path(Path(output_dir), True)):
+        result = [False, "The specified output path is not valid."]
+    elif not nxttxt.is_valid_path(input_path, False):
+        result = [False, "The specified output path is not valid."]
+    elif not nxttxt.is_valid_path(input_path, True):
+        result = [False, "The specified input path is not a directory."]
+    else:
+        result = [True, None]
+    return result
+
+
 def determine_txts(input_dir: str) -> list:
     print("Identifying TXT files... ")
     input_path = Path(input_dir)
-    if not input_path.exists():
-        print(input_dir, "is not a valid path.")
-        exit(1)
-    elif not input_path.is_dir():
-        print(input_dir, "is not a directory, it is either a file, or it is a broken symbolic link.")
-        exit(1)
-
     txt_working_list: list = []
     print("    TXTs in", input_dir + ":")
     for child in input_path.iterdir():
@@ -91,13 +98,11 @@ def determine_output_path(input_dir: str, output_dir: str, new_dir: bool) -> Pat
     print("Identifying output directory...")
     final_output_path: Path
     if output_dir:
-        if not Path(output_dir).exists():
-            print(output_dir, "does not exist. Please enter an exist output directory if you wish to manually select "
-                              "one.")
-            exit(1)
         final_output_path = Path(output_dir)
+    elif new_dir:
+        final_output_path = nxttxt.enumerate_duplicate_paths(Path(input_dir).parent / "sa-engine analysis")
     else:
-        final_output_path = retrieve_path_without_manual_output(input_dir, new_dir)
+        final_output_path = Path(input_dir)
     print("    Output directory will be", str(final_output_path) + ".")
     return final_output_path
 
