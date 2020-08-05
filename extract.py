@@ -9,18 +9,16 @@ import time
 def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
     print("Authenticate validity of entered paths...")
     input_path = Path(input_dir)
-    result: list = []
     if nxttxt.is_valid_path(input_path, True) and (not output_dir):
-        result = [True, None]
+        return [True, None]
     if nxttxt.is_valid_path(input_path, True) and nxttxt.is_valid_path(Path(output_dir), True):
-        result = [True, None]
+        return [True, None]
     if nxttxt.is_valid_path(input_path, True) and (not nxttxt.is_valid_path(Path(output_dir), True)):
-        result = [False, "The specified output path is not valid."]
+        return [False, "The specified output path is not valid."]
     if not nxttxt.is_valid_path(input_path, True):
-        result = [False, "The specified input path is not a directory."]
+        return [False, "The specified input path is not a directory."]
     if not nxttxt.is_valid_path(input_path, False):
-        result = [False, "The specified output path is not valid."]
-    return result
+        return [False, "The specified output path is not valid."]
 
 
 def determine_pdfs(input_path: Path) -> list:
