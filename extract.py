@@ -12,15 +12,16 @@ def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list
     result: list = []
     if nxttxt.is_valid_path(input_path, True) and (not output_dir):
         result = [True, None]
-    else:
+    if not nxttxt.is_valid_path(input_path, True):
+        result = [False, "The specified input path is not a directory."]
+    if not nxttxt.is_valid_path(input_path, False):
+        result = [False, "The specified output path is not valid."]
+    if output_dir:
         if nxttxt.is_valid_path(input_path, True) and nxttxt.is_valid_path(Path(output_dir), True):
             result = [True, None]
         if nxttxt.is_valid_path(input_path, True) and (not nxttxt.is_valid_path(Path(output_dir), True)):
             result = [False, "The specified output path is not valid."]
-        if not nxttxt.is_valid_path(input_path, True):
-            result = [False, "The specified input path is not a directory."]
-        if not nxttxt.is_valid_path(input_path, False):
-            result = [False, "The specified output path is not valid."]
+
     return result
 
 
