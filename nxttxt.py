@@ -3,14 +3,17 @@ from pathlib import Path
 
 def is_valid_path(path: Path, should_be_dir: bool) -> bool:
     if not path:
-        return False
-    if not path.exists():
-        return False
-    if should_be_dir:
+        result = False
+    elif not path.exists():
+        result = False
+    elif should_be_dir:
         if path.is_dir():
-            return True
-        return False
-    return True
+            result = True
+        else:
+            result = False
+    else:
+        result = True
+    return result
 
 
 def enumerate_duplicate_paths(start_path: Path) -> Path:
