@@ -24,14 +24,6 @@ def server_is_active(url: str) -> list:
     return state_of_the_server
 
 
-def retrieve_path_without_manual_output(input_dir: str, new_dir: bool) -> Path:
-    if new_dir:
-        final_output_path = nxttxt.enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
-    else:
-        final_output_path = Path(input_dir)
-    return final_output_path
-
-
 # "Procedural" functions
 def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
     print("Authenticate validity of entered paths...")
@@ -141,12 +133,15 @@ if __name__ == "__main__":
                                                                                    "Defaults to same as input).")
 
     args = parser.parse_args()
+    auth = authenticate_instructional_validity(args.input, args.output)
+    if auth[0]:
+        files = determine_txts(args.input)
+        output_url = determine_url(args.address, args.p)
+        analysis = analyze_txts(files, output_url)
+        output_path = determine_output_path(args.input, args.output, args.nd)
 
-    files = determine_txts(args.input)
-    output_url = determine_url(args.address, args.p)
-    analysis = analyze_txts(files, output_url)
-    output_path = determine_output_path(args.input, args.output, args.nd)
-
-    create_output_dir(output_path)
-    create_files(analysis, output_path)
-    print("Process complete.")
+        create_output_dir(output_path)
+        create_files(analysis, output_path)
+        print("Process complete.")
+    else:
+        print(auth[1])
