@@ -6,11 +6,8 @@ def is_valid_path(path: Path, should_be_dir: bool) -> bool:
         result = False
     elif not path.exists():
         result = False
-    elif should_be_dir:
-        if path.is_dir():
-            result = True
-        else:
-            result = False
+    elif should_be_dir and (not path.is_dir()):
+        result = False
     else:
         result = True
     return result
