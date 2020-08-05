@@ -2,6 +2,8 @@ from pathlib import Path
 
 
 def is_valid_path(path: Path, should_be_dir: bool) -> bool:
+    if not path:
+        return False
     if not path.exists():
         return False
     if should_be_dir:
