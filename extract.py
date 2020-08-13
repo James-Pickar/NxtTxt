@@ -65,45 +65,6 @@ def create_output_directory(output_path: Path, pdfs_list: list):
         exit(0)
 
 
-def extract_text(pdf_paths: list, output_path: Path, input_path: str, max_extraction_time: float):
-    print("Extracting text...")
-    for pdf_path in pdf_paths:
-        txt_path = nxttxt.enumerate_duplicate_paths(output_path.joinpath(Path(pdf_path.stem).with_suffix(".txt")))
-        txt_path.touch()
-        print("   ", pdf_path, "->", txt_path)
-
-        pdf_reader = PyPDF2.PdfFileReader(str(pdf_path))
-        try:
-            page_max_index = pdf_reader.getNumPages() - 1
-        except PyPDF2.utils.PdfReadError:
-            if pdf_reader.isEncrypted:
-                print("   ", pdf_path, "is encrypted and cannot be extracted. If you would like this file to be "
-                                       "extracted, please decrypt the file and run the extraction again.")
-            else:
-                print("    There was a error reading", pdf_path, "the file may be corrupted so it will be skipped.")
-            txt_path.unlink()
-        else:
-            page: int = 0
-            extracted_text: str = ""
-
-            start_time = time.time()
-            while page <= page_max_index:
-                if max_extraction_time and (start_time + max_extraction_time) < time.time():
-                    print(pdf_path, "timed out after extracting", page, "/", (page_max_index + 1), "pages. To extract "
-                                                                                                   "the full document"
-                                                                                                   " run the command "
-                                                                                                   "again with a "
-                                                                                                   "longer or "
-                                                                                                   "nonexistent time "
-                                                                                                   "limit.")
-                    break
-                extracted_text += "\n\n" + pdf_reader.getPage(page).extractText()
-                page += 1
-            txt_path.write_text(extracted_text)
-
-    print("PDFs in", input_path, "extracted to", str(output_path))
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extracts text from all PDFs in a directory.")
     parser.add_argument("input", metavar="Input directory path", type=str, help="Path of directory with PDFs to "

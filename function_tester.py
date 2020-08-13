@@ -18,16 +18,18 @@ def touch_files(pdf_paths: list, output_path: Path) -> list:
 
 def verify_pdfs(paths: list) -> list:
     updated_paths: list = []
+
     for path in paths:
         pdf_reader = PyPDF2.PdfFileReader(str(path["pdf"]))
+        if pdf_reader.isEncrypted:
+            print("   ", path["pdf"], "is encrypted and cannot be extracted. If you would like this file to be "
+                                      "extracted, please decrypt the file and run the extraction again.")
+            path["txt"].unlink()
+            continue
         try:
             page_max_index = pdf_reader.getNumPages() - 1
         except PyPDF2.utils.PdfReadError:
-            if pdf_reader.isEncrypted:
-                print("   ", path["pdf"], "is encrypted and cannot be extracted. If you would like this file to be "
-                                          "extracted, please decrypt the file and run the extraction again.")
-            else:
-                print("    There was a error reading", path["pdf"], "the file may be corrupted so it will be skipped.")
+            print("    There was a error reading", path["pdf"], "the file may be corrupted so it will be skipped.")
             path["txt"].unlink()
         else:
             path["page max index"] = page_max_index
