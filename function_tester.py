@@ -1,4 +1,5 @@
 from pathlib import Path
+import textract
 import PyPDF2
 import nxttxt
 import time
@@ -18,7 +19,6 @@ def touch_files(pdf_paths: list, output_path: Path) -> list:
 
 def verify_pdfs(paths: list) -> list:
     updated_paths: list = []
-
     for path in paths:
         pdf_reader = PyPDF2.PdfFileReader(str(path["pdf"]))
         if pdf_reader.isEncrypted:
@@ -40,25 +40,14 @@ def verify_pdfs(paths: list) -> list:
 def extract_text(paths: list, max_extraction_time: float):
     print("Extracting text...")
     for path in paths:
-        pdf_reader = PyPDF2.PdfFileReader(str(path["pdf"]))
-        page: int = 0
-        extracted_text: str = ""
-        start_time = time.time()
-        while page <= path["page max index"]:
-            if max_extraction_time and (start_time + max_extraction_time) < time.time():
-                print(path["pdf"], "timed out after extracting", page, "/", (path["page max index"] + 1), "pages. To "
-                                                                                                          "extract "
-                                                                                                          "the full "
-                                                                                                          "document "
-                                                                                                          "run the "
-                                                                                                          "command "
-                                                                                                          "again with "
-                                                                                                          "a longer "
-                                                                                                          "or "
-                                                                                                          "nonexistent "
-                                                                                                          "time limit.")
-                break
-            extracted_text += "\n\n" + pdf_reader.getPage(page).extractText()
-            page += 1
+        time_limit = time.time() + max_extraction_time
+        extracted_text: str = textract.process(path["pdf"], method="tesseract")
+        if time_limit < time.time():
+            print(path["pdf"], "timed out. What was extracted will be written to", path["txt"], "To extract the full "
+                                                                                                "document run the "
+                                                                                                "command again with a "
+                                                                                                "longer or "
+                                                                                                "nonexistent time "
+                                                                                                "limit.")
         path["txt"].write_text(extracted_text)
     print("PDFs extracted to", str(paths[0]["txt"].parent))
