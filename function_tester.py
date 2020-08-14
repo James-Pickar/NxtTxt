@@ -36,6 +36,7 @@ def extract_text(paths: list, max_extraction_time: float):
         time_limit = time.time() + max_extraction_time
         try:
             extracted_text: str = textract.process(path["pdf"], method="tesseract")
+            """"
             if time_limit < time.time():
                 print(path["pdf"], "timed out. What was extracted will be written to", path["txt"], "To extract the  "
                                                                                                     "full document "
@@ -44,6 +45,7 @@ def extract_text(paths: list, max_extraction_time: float):
                                                                                                     "longer or "
                                                                                                     "nonexistent time "
                                                                                                     "limit.")
+            """
         except textract.parsers.exceptions.ShellError:
             print("    There was a error reading", path["pdf"], "the file may be corrupted so it will be skipped.")
             path["txt"].unlink()
