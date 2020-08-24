@@ -84,8 +84,6 @@ def extract_text(paths: list, max_extraction_time):
     print("Extracting text...")
     for path in paths:
         signal.signal(signal.SIGALRM, nxttxt.alarm_handler)
-        if max_extraction_time:
-            signal.alarm(max_extraction_time)
         start_time = time.time()
         try:
             extracted_text: str = textract.process(path["pdf"], method="pdfminer")
@@ -100,7 +98,7 @@ def extract_text(paths: list, max_extraction_time):
         else:
             print("   ", path["pdf"], "extracted in", completion_time, "seconds.")
             path["txt"].write_text(str(extracted_text))
-    signal.alarm(0)
+        signal.alarm(0)
     print("PDFs extracted to", str(paths[0]["txt"].parent))
 
 
