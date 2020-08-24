@@ -43,5 +43,4 @@ class TimeOutException(Exception):
 
 
 def alarm_handler(signum, frame):
-    print("ALARM signal received")
     raise TimeOutException()
