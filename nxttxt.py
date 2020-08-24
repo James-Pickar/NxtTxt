@@ -1,12 +1,12 @@
 from pathlib import Path
 
 
-def is_valid_path(path: Path, should_be_dir: bool) -> bool:
+def is_valid_path(path, should_be_dir: bool) -> bool:
     if not path:
         result = False
-    elif not path.exists():
+    elif not Path(path).exists():
         result = False
-    elif should_be_dir and (not path.is_dir()):
+    elif should_be_dir and (not Path(path).is_dir()):
         result = False
     else:
         result = True
@@ -36,3 +36,12 @@ def enumerate_duplicate_paths(start_path: Path) -> Path:
         iteration_number += 1
 
     return (parent / test_path).with_suffix(suffix)
+
+
+class TimeOutException(Exception):
+    pass
+
+
+def alarm_handler(signum, frame):
+    print("ALARM signal received")
+    raise TimeOutException()

@@ -1,7 +1,7 @@
 import time
-import argparse
-import zipfile
 import nxttxt
+import zipfile
+import argparse
 from pathlib import Path
 
 startTime = time.time()
