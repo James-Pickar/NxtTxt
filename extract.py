@@ -11,7 +11,8 @@ import time
 def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
     print("Authenticate validity of entered paths...")
     input_path = Path(input_dir)
-    if nxttxt_module.is_valid_path(input_path, True) and output_dir and (not nxttxt_module.is_valid_path(output_dir, True)):
+    if nxttxt_module.is_valid_path(input_path, True) and output_dir and (not nxttxt_module.is_valid_path(output_dir,
+                                                                                                         True)):
         result = [False, "The specified output path is not valid."]
     elif not nxttxt_module.is_valid_path(input_path, False):
         result = [False, "The specified input path is not valid."]
@@ -19,6 +20,7 @@ def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list
         result = [False, "The specified input path is not a directory."]
     else:
         result = [True, None]
+        print("Validity authenticated.")
     return result
 
 
@@ -37,7 +39,7 @@ def determine_pdfs(input_dir: str) -> list:
             print("       ", str(child), "is a PDF file.")
             pdfs_working_list.append(child.absolute())
 
-    print("PDFs list compiled.")
+    print("    PDFs list compiled.")
     return pdfs_working_list
 
 
@@ -56,27 +58,27 @@ def generate_output_path(input_dir: str, manual_path: str, new_dir: bool) -> Pat
     return final_path
 
 
-def create_output_directory(output_path: Path, pdfs_list: list):
+def create_output_directory(output_path: Path, input_str: str, pdfs_list: list, nd: bool):
     print("Creating output directory...")
     pdfs_list_count: int = len(pdfs_list)
-    if pdfs_list_count > 0 and args.nd:
+    if pdfs_list_count > 0 and nd:
         output_path.mkdir()
-        print("Output directory created.")
+        print("    Output directory created.")
     elif not (pdfs_list_count > 0):
-        print("No PDFs found in", args.input)
+        print("    No PDFs found in", input_str)
         exit(0)
 
 
-def touch_files(pdf_paths: list, final_output_file: Path) -> list:
+def create_path_objects(pdf_paths: list, final_output_file: Path) -> list:
     print("Creating Txts")
     paths: list = []
     for pdf_path in pdf_paths:
         txt_path = nxttxt_module.enumerate_duplicate_paths(final_output_file / Path(pdf_path.stem).with_suffix(".txt"))
-        txt_path.touch()
         paths.append({
             "pdf": pdf_path,
             "txt": txt_path
         })
+    print("    Files created.")
     return paths
 
 
@@ -93,15 +95,24 @@ def extract_text(paths: list, max_extraction_time):
         except nxttxt_module.TimeOutException:
             incomplete_time = time.time() - start_time
             print("   ", path["pdf"], "timed out after", incomplete_time, "seconds.")
-            path["txt"].unlink()
+            paths.remove(path)
         except (textract.parsers.exceptions.ShellError, textract.parsers.exceptions.ExtensionNotSupported):
             print("    There was a error reading", path["pdf"], "the file may be corrupted so it will be skipped.")
-            path["txt"].unlink()
+            paths.remove(path)
         else:
             print("   ", path["pdf"], "extracted in", completion_time, "seconds.")
-            path["txt"].write_text(str(extracted_text))
+            path["extraction"] = str(extracted_text)
         signal.alarm(0)
-    print("PDFs extracted to", str(paths[0]["txt"].parent))
+    print("    All PDFs extracted.")
+    return paths
+
+
+def touch_and_write_files(paths: list):
+    print("Writing extractions to txts")
+    for path in paths:
+        path["txt"].touch()
+        path["txt"].write_text(path["extraction"])
+    print("    All PDFs extractions written to ", str(paths[0]["txt"].parent))
 
 
 if __name__ == "__main__":
@@ -123,8 +134,9 @@ if __name__ == "__main__":
         pdfs = determine_pdfs(args.input)
         output_dir_path = generate_output_path(Path(args.input), args.output, args.nd)
 
-        create_output_directory(output_dir_path, pdfs)
-        paths_list = touch_files(pdfs, output_dir_path)
-        extract_text(paths_list, args.timeout)
+        create_output_directory(output_dir_path, args.input, pdfs, args.nd)
+        paths_list = create_path_objects(pdfs, output_dir_path)
+        extractions_paths = extract_text(paths_list, args.timeout)
+        touch_and_write_files(extractions_paths)
     else:
         print(auth[1])

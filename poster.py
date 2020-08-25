@@ -67,21 +67,28 @@ def determine_url(address: str, port: int) -> str:
     return url + "/api/v1/articles/analyzeText"
 
 
-def analyze_txts(txt_file_paths: list, url: str) -> dict:
+def read_txts(txt_file_paths: list) -> list:
+    txts = []
+    for txt_file_path in txt_file_paths:
+        data = open(str(txt_file_path), "rb").read()
+        txts.append(data)
+    return txts
+
+
+def analyze_txts(txts: list, url: str) -> dict:
     print("Requesting analysis...")
     analyzed_txts: dir = {}
     headers = {
         "Content-type": "text/plain",
         "Accept": "application/json"
     }
-    for txt_file_path in txt_file_paths:
-        data = open(str(txt_file_path), "rb").read()
-        print("    Analyzing", str(txt_file_path) + "...")
-        response = requests.post(url, headers=headers, data=data)
+    for txt in txts:
+        print("    Analyzing", str(txt) + "...")
+        response = requests.post(url, headers=headers, data=txt)
         if response.status_code == requests.codes.ok:
-            analyzed_txts.update([(txt_file_path.with_suffix(".json").name, response)])
+            analyzed_txts.update([(txt.with_suffix(".json").name, response)])
         else:
-            print("    Request for analysis of", str(txt_file_path), "failed with error code:", response.status_code)
+            print("    Request for analysis of", str(txt), "failed with error code:", response.status_code)
 
     return analyzed_txts
 
@@ -137,7 +144,8 @@ if __name__ == "__main__":
     if auth[0]:
         files = determine_txts(args.input)
         output_url = determine_url(args.address, args.p)
-        analysis = analyze_txts(files, output_url)
+        text = read_txts(files)
+        analysis = analyze_txts(text, output_url)
         output_path = determine_output_path(args.input, args.output, args.nd)
 
         create_output_dir(output_path)

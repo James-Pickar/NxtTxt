@@ -10,9 +10,9 @@ startTime = time.time()
 def authenticate_instructional_validity(input_file: str, manual_output: str) -> list:
     input_path = Path(input_file)
     if not nxttxt_module.is_valid_path(input_path, False):
-        return [False, "The file path entered is not valid."]
+        return [False, "The input path entered is not valid."]
     elif nxttxt_module.is_valid_path(input_path, True):
-        return [False, "The file path entered is a directory and a file."]
+        return [False, "The input path entered is a directory not a file."]
     elif not nxttxt_module.is_valid_path(Path(manual_output), True):
         return [False, "The specified output path is not valid."]
     else:
