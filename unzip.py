@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
     # Use inputs to unzip file correctly
     if auth[0]:
-        output_path: Path = generate_output_path(zip_file_path, output_file_path, new_dir)
+        output_path = generate_output_path(zip_file_path, output_file_path, new_dir)
         create_output_directory(output_path, output_file_path, new_dir)
         unzip_file(zip_file_path, output_path, new_dir)
     else:

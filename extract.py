@@ -101,7 +101,7 @@ def extract_text(paths: list, max_extraction_time):
             paths.remove(path)
         else:
             print("   ", path["pdf"], "extracted in", completion_time, "seconds.")
-            path["extraction"] = str(extracted_text)
+            path["extractions"] = str(extracted_text)
         signal.alarm(0)
     print("    All PDFs extracted.")
     return paths
@@ -111,7 +111,7 @@ def touch_and_write_files(paths: list):
     print("Writing extractions to txts")
     for path in paths:
         path["txt"].touch()
-        path["txt"].write_text(path["extraction"])
+        path["txt"].write_text(path["extractions"])
     print("    All PDFs extractions written to ", str(paths[0]["txt"].parent))
 
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     parser.add_argument("-nd", action="store_true", help="Places extracted text files into new directory with same "
                                                          "name as pdf file(Defaults to false).")
     parser.add_argument("-timeout", metavar="Extraction time limit", type=int, help="Restricts the time for the "
-                                                                                    "extraction of each PDF to the "
+                                                                                    "extractions of each PDF to the "
                                                                                     "inputted value in seconds.")
     args = parser.parse_args()
 

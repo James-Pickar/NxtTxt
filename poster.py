@@ -28,7 +28,8 @@ def server_is_active(url: str) -> list:
 def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
     print("Authenticate validity of entered paths...")
     input_path = Path(input_dir)
-    if nxttxt_module.is_valid_path(input_path, True) and (not nxttxt_module.is_valid_path(Path(output_dir), True)):
+    if nxttxt_module.is_valid_path(input_path, True) and output_dir and \
+            (not nxttxt_module.is_valid_path(Path(output_dir), True)):
         result = [False, "The specified output path is not valid."]
     elif not nxttxt_module.is_valid_path(input_path, False):
         result = [False, "The specified output path is not valid."]
@@ -71,24 +72,31 @@ def read_txts(txt_file_paths: list) -> list:
     txts = []
     for txt_file_path in txt_file_paths:
         data = open(str(txt_file_path), "rb").read()
-        txts.append(data)
+        txts.append({
+            "txt_path": Path(txt_file_path.name),
+            "data": data
+        })
     return txts
 
 
-def analyze_txts(txts: list, url: str) -> dict:
+def analyze_txts(txts: list, url: str) -> list:
     print("Requesting analysis...")
-    analyzed_txts: dir = {}
+    analyzed_txts = []
     headers = {
         "Content-type": "text/plain",
         "Accept": "application/json"
     }
     for txt in txts:
-        print("    Analyzing", str(txt) + "...")
-        response = requests.post(url, headers=headers, data=txt)
+        print("    Analyzing", str(txt["txt_path"]) + "...")
+        response = requests.post(url, headers=headers, data=txt["data"])
         if response.status_code == requests.codes.ok:
-            analyzed_txts.update([(txt.with_suffix(".json").name, response)])
+            txt.update({
+                "analysis": response,
+                "analysis_path": txt["txt_path"].with_suffix(".json")
+            })
+            analyzed_txts.append(txt)
         else:
-            print("    Request for analysis of", str(txt), "failed with error code:", response.status_code)
+            print("    Request for analysis of", str(txt["txt_path"]), "failed with error code:", response.status_code)
 
     return analyzed_txts
 
@@ -101,7 +109,7 @@ def determine_output_path(input_dir: str, output_dir: str, new_dir: bool) -> Pat
     elif new_dir:
         final_output_path = nxttxt_module.enumerate_duplicate_paths(Path(input_dir).parent / "sa-engine analysis")
     else:
-        final_output_path = Path(input_dir)
+        final_output_path = Path(input_dir).parent
     print("    Output directory will be", str(final_output_path) + ".")
     return final_output_path
 
@@ -112,14 +120,14 @@ def create_output_dir(output_dir: Path):
         print("    Output directory created.")
 
 
-def create_files(analysis_list: dir, output_dir: Path):
+def create_files(analysis_list: list, output_dir: Path):
     print("Creating analyzed files...")
-    for analysis_path in analysis_list:
-        created_path = nxttxt_module.enumerate_duplicate_paths(output_dir.joinpath(analysis_path))
+    for analysis_dict in analysis_list:
+        created_path = nxttxt_module.enumerate_duplicate_paths(output_dir.joinpath(analysis_dict["analysis_path"]))
         print("    Creating", str(created_path) + "...")
         created_path.touch()
         print("    Writing analysis...")
-        created_path.write_text(json.dumps(analysis_list[analysis_path].json()))
+        created_path.write_text(json.dumps(analysis_dict["analysis"].json()))
     print("    Analysis complete!")
 
 
@@ -145,6 +153,7 @@ if __name__ == "__main__":
         files = determine_txts(args.input)
         output_url = determine_url(args.address, args.p)
         text = read_txts(files)
+        print(text)
         analysis = analyze_txts(text, output_url)
         output_path = determine_output_path(args.input, args.output, args.nd)
 

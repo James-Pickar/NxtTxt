@@ -38,6 +38,11 @@ def enumerate_duplicate_paths(start_path: Path) -> Path:
     return (parent / test_path).with_suffix(suffix)
 
 
+def empty_directory(path: Path):
+    for child in path.iterdir():
+        child.unlink()
+
+
 class TimeOutException(Exception):
     pass
 
