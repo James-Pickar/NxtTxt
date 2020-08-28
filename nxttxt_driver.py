@@ -17,9 +17,9 @@ def unzip_drive(unzip_input: str, cache: str, output: str):
     if auth[0]:
         unzip.unzip_file(unzip_input, output_path, True)
     else:
-        print(auth[1])
         nxttxt.clear_directory(output_path, True)
-        exit(1)
+        print(auth[1])
+        raise auth[2]
 
 
 def extract_drive(extract_input: str, timeout: int) -> list:
@@ -35,13 +35,13 @@ def extract_drive(extract_input: str, timeout: int) -> list:
         return extractions_paths
     else:
         print("Analysis failed due to missing pdf cache.")
-        exit(1)
+        raise nxttxt.exceptions.NoPDFsLocated
 
 
 def poster_drive(poster_inputs: list, origin_path: str, output: str, nd: bool, port: int, address: str):
     if not (output and nxttxt.is_valid_path(output, True)):
         print("Invalid output directory.")
-        exit(1)
+        raise nxttxt.exceptions.InvalidPath
     poster_list = []
     for poster_input in poster_inputs:
         poster_list.append({

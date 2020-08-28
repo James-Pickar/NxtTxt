@@ -13,11 +13,11 @@ def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list
     input_path = Path(input_dir)
     if nxttxt.is_valid_path(input_path, True) and output_dir and (not nxttxt.is_valid_path(output_dir,
                                                                                            True)):
-        result = [False, "The specified output path is not valid."]
+        result = [False, "The specified output path is not valid.", nxttxt.exceptions.InvalidPath]
     elif not nxttxt.is_valid_path(input_path, False):
-        result = [False, "The specified input path is not valid."]
+        result = [False, "The specified input path is not valid.", nxttxt.exceptions.InvalidPath]
     elif not nxttxt.is_valid_path(input_path, True):
-        result = [False, "The specified input path is not a directory."]
+        result = [False, "The specified input path is not a directory.", nxttxt.exceptions.PathIsNotADirectory]
     else:
         result = [True, None]
         print("Validity authenticated.")
@@ -66,7 +66,7 @@ def create_output_directory(output_path: Path, input_str: str, pdfs_list: list, 
         print("    Output directory created.")
     elif not (pdfs_list_count > 0):
         print("    No PDFs found in", input_str)
-        exit(0)
+        raise nxttxt.exceptions.NoPDFsLocated
 
 
 def create_path_objects(pdf_paths: list, final_output_file: Path) -> list:
@@ -93,7 +93,7 @@ def extract_text(paths: list, max_extraction_time: int) -> list:
         try:
             extracted_text: str = textract.process(path["pdf"], method="pdfminer")
             completion_time = time.time() - start_time
-        except nxttxt.exceptions.TimeOutException:
+        except nxttxt.exceptions.ExtractionTimeOut:
             incomplete_time = time.time() - start_time
             print("   ", path["pdf"], "timed out after", incomplete_time, "seconds.")
         except (textract.parsers.exceptions.ShellError, textract.parsers.exceptions.ExtensionNotSupported):
@@ -142,3 +142,4 @@ if __name__ == "__main__":
         touch_and_write_files(extractions_paths)
     else:
         print(auth[1])
+        raise auth[2]

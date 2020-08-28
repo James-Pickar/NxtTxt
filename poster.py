@@ -11,14 +11,14 @@ def server_is_active(url: str) -> list:
     try:
         requests.get(url)
     except requests.exceptions.ConnectionError:
-        state_of_the_server = [False, "Connection to server failed. Please check that your instance is active."]
+        state_of_the_server = [False, "Connection to server failed. Please check that your instance is active.", nxttxt.exceptions.ConnectionRejected]
     except requests.exceptions.Timeout:
-        state_of_the_server = [False, "Connection Timed Out."]
+        state_of_the_server = [False, "Connection Timed Out.", nxttxt.exceptions.ConnectionTimeout]
     except requests.exceptions.TooManyRedirects:
-        state_of_the_server = [False, "The address entered causes too many redirects."]
+        state_of_the_server = [False, "The address entered causes too many redirects.", nxttxt.exceptions.TooManyRedirects]
     except requests.exceptions.RequestException:
         state_of_the_server = [False, "There was an unknown issue with the server. Please check that engine is "
-                                      "working properly."]
+                                      "working properly.", nxttxt.exceptions.UnknownConnectionError]
     else:
         state_of_the_server = [True, "Success!"]
     return state_of_the_server
@@ -30,11 +30,11 @@ def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list
     input_path = Path(input_dir)
     if nxttxt.is_valid_path(input_path, True) and output_dir and \
             (not nxttxt.is_valid_path(Path(output_dir), True)):
-        result = [False, "The specified output path is not valid."]
+        result = [False, "The specified output path is not valid.", nxttxt.exceptions.InvalidPath]
     elif not nxttxt.is_valid_path(input_path, False):
-        result = [False, "The specified output path is not valid."]
+        result = [False, "The specified output path is not valid.", nxttxt.exceptions.InvalidPath]
     elif not nxttxt.is_valid_path(input_path, True):
-        result = [False, "The specified input path is not a directory."]
+        result = [False, "The specified input path is not a directory.", nxttxt.exceptions.PathIsNotADirectory]
     else:
         result = [True, None]
     return result
@@ -63,7 +63,7 @@ def determine_url(address: str, port: int) -> str:
     server_active = server_is_active(url + "/management/health")
     if not server_active[0]:
         print(server_active[1])
-        exit(1)
+        raise server_active[2]
     print("    Connection successful.")
     return url + "/api/v1/articles/analyzeText"
 
@@ -162,3 +162,4 @@ if __name__ == "__main__":
         print("Process complete.")
     else:
         print(auth[1])
+        raise auth[2]

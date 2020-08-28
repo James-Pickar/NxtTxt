@@ -10,11 +10,11 @@ startTime = time.time()
 def authenticate_instructional_validity(input_file: str, manual_output: str) -> list:
     input_path = Path(input_file)
     if not nxttxt.is_valid_path(input_path, False):
-        return [False, "The input path entered is not valid."]
+        return [False, "The input path entered is not valid.", nxttxt.exceptions.InvalidPath]
     elif nxttxt.is_valid_path(input_path, True):
-        return [False, "The input path entered is a directory not a file."]
+        return [False, "The input path entered is a directory not a file.", nxttxt.exceptions.PathIsADirectory]
     elif not nxttxt.is_valid_path(Path(manual_output), True):
-        return [False, "The specified output path is not valid."]
+        return [False, "The specified output path is not valid.", nxttxt.exceptions.InvalidPath]
     else:
         return [True, None]
 
@@ -50,7 +50,7 @@ def unzip_file(input_file: str, output_file: Path, nd: bool):
         print(input_file, "does appear to be a valid zip file.")
         if nd:
             output_file.rmdir()
-        exit(1)
+        raise nxttxt.exceptions.InvalidFileType
     print("    ", input_file, " unzipped to ", str(output_file), " in ", time.time() - startTime, "seconds (including "
                                                                                                   "user input).")
 
@@ -79,3 +79,4 @@ if __name__ == "__main__":
         unzip_file(zip_file_path, output_path, new_dir)
     else:
         print(auth[1])
+        raise auth[2]

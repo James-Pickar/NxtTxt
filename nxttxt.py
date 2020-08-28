@@ -48,4 +48,4 @@ def clear_directory(path: Path, rm: bool):
 
 def alarm_handler(signum, frame):
     # signum, frame
-    raise exceptions.TimeOutException()
+    raise exceptions.ExtractionTimeOut()
