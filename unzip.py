@@ -7,13 +7,13 @@ from pathlib import Path
 startTime = time.time()
 
 
-def authenticate_instructional_validity(input_file: str, manual_output: str) -> list:
+def authenticate_instructional_validity(input_file: str, manual_output) -> list:
     input_path = Path(input_file)
     if not nxttxt.is_valid_path(input_path, False):
         return [False, "The input path entered is not valid.", nxttxt.exceptions.InvalidPath]
     elif nxttxt.is_valid_path(input_path, True):
         return [False, "The input path entered is a directory not a file.", nxttxt.exceptions.PathIsADirectory]
-    elif not nxttxt.is_valid_path(Path(manual_output), True):
+    elif manual_output and (not nxttxt.is_valid_path(Path(manual_output), True)):
         return [False, "The specified output path is not valid.", nxttxt.exceptions.InvalidPath]
     else:
         return [True, None]

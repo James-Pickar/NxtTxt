@@ -6,18 +6,18 @@ import nxttxt
 from pathlib import Path
 
 
-def unzip_drive(unzip_input: str, cache: str, output: str):
-    output_path = Path(cache)
-    if not output_path.exists():
-        output_path.mkdir()
+def unzip_drive(unzip_input: str, cache: str, output):
+    cache_path = Path(cache)
+    if not cache_path.exists():
+        cache_path.mkdir()
     else:
-        nxttxt.clear_directory(output_path, False)
+        nxttxt.clear_directory(cache_path, False)
 
     auth = unzip.authenticate_instructional_validity(unzip_input, output)
     if auth[0]:
-        unzip.unzip_file(unzip_input, output_path, True)
+        unzip.unzip_file(unzip_input, cache_path, True)
     else:
-        nxttxt.clear_directory(output_path, True)
+        nxttxt.clear_directory(cache_path, True)
         print(auth[1])
         raise auth[2]
 
@@ -39,9 +39,6 @@ def extract_drive(extract_input: str, timeout: int) -> list:
 
 
 def poster_drive(poster_inputs: list, origin_path: str, output: str, nd: bool, port: int, address: str):
-    if not (output and nxttxt.is_valid_path(output, True)):
-        print("Invalid output directory.")
-        raise nxttxt.exceptions.InvalidPath
     poster_list = []
     for poster_input in poster_inputs:
         poster_list.append({

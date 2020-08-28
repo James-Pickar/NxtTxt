@@ -104,8 +104,6 @@ def extract_text(paths: list, max_extraction_time: int) -> list:
             extraction_list.append(path)
         signal.alarm(0)
     print("    All PDFs extracted.")
-    print(extraction_list)
-
     return extraction_list
 
 
