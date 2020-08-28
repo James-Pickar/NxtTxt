@@ -1,7 +1,8 @@
 from pathlib import Path
+import exceptions
 
 
-def is_valid_path(path, should_be_dir: bool) -> bool:
+def is_valid_path(path: str, should_be_dir: bool) -> bool:
     if not path:
         result = False
     elif not Path(path).exists():
@@ -38,14 +39,13 @@ def enumerate_duplicate_paths(start_path: Path) -> Path:
     return (parent / test_path).with_suffix(suffix)
 
 
-def empty_directory(path: Path):
+def clear_directory(path: Path, rm: bool):
     for child in path.iterdir():
         child.unlink()
-
-
-class TimeOutException(Exception):
-    pass
+    if rm:
+        path.rmdir()
 
 
 def alarm_handler(signum, frame):
-    raise TimeOutException()
+    # signum, frame
+    raise exceptions.TimeOutException()

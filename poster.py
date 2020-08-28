@@ -1,5 +1,5 @@
 import json
-import nxttxt_module
+import nxttxt
 import requests
 import argparse
 from pathlib import Path
@@ -28,12 +28,12 @@ def server_is_active(url: str) -> list:
 def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
     print("Authenticate validity of entered paths...")
     input_path = Path(input_dir)
-    if nxttxt_module.is_valid_path(input_path, True) and output_dir and \
-            (not nxttxt_module.is_valid_path(Path(output_dir), True)):
+    if nxttxt.is_valid_path(input_path, True) and output_dir and \
+            (not nxttxt.is_valid_path(Path(output_dir), True)):
         result = [False, "The specified output path is not valid."]
-    elif not nxttxt_module.is_valid_path(input_path, False):
+    elif not nxttxt.is_valid_path(input_path, False):
         result = [False, "The specified output path is not valid."]
-    elif not nxttxt_module.is_valid_path(input_path, True):
+    elif not nxttxt.is_valid_path(input_path, True):
         result = [False, "The specified input path is not a directory."]
     else:
         result = [True, None]
@@ -107,7 +107,7 @@ def determine_output_path(input_dir: str, output_dir: str, new_dir: bool) -> Pat
     if output_dir:
         final_output_path = Path(output_dir)
     elif new_dir:
-        final_output_path = nxttxt_module.enumerate_duplicate_paths(Path(input_dir).parent / "sa-engine analysis")
+        final_output_path = nxttxt.enumerate_duplicate_paths(Path(input_dir).parent / "sa-engine analysis")
     else:
         final_output_path = Path(input_dir).parent
     print("    Output directory will be", str(final_output_path) + ".")
@@ -123,7 +123,7 @@ def create_output_dir(output_dir: Path):
 def create_files(analysis_list: list, output_dir: Path):
     print("Creating analyzed files...")
     for analysis_dict in analysis_list:
-        created_path = nxttxt_module.enumerate_duplicate_paths(output_dir.joinpath(analysis_dict["analysis_path"]))
+        created_path = nxttxt.enumerate_duplicate_paths(output_dir.joinpath(analysis_dict["analysis_path"]))
         print("    Creating", str(created_path) + "...")
         created_path.touch()
         print("    Writing analysis...")

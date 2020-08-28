@@ -1,5 +1,5 @@
 import time
-import nxttxt_module
+import nxttxt
 import zipfile
 import argparse
 from pathlib import Path
@@ -9,11 +9,11 @@ startTime = time.time()
 
 def authenticate_instructional_validity(input_file: str, manual_output: str) -> list:
     input_path = Path(input_file)
-    if not nxttxt_module.is_valid_path(input_path, False):
+    if not nxttxt.is_valid_path(input_path, False):
         return [False, "The input path entered is not valid."]
-    elif nxttxt_module.is_valid_path(input_path, True):
+    elif nxttxt.is_valid_path(input_path, True):
         return [False, "The input path entered is a directory not a file."]
-    elif not nxttxt_module.is_valid_path(Path(manual_output), True):
+    elif not nxttxt.is_valid_path(Path(manual_output), True):
         return [False, "The specified output path is not valid."]
     else:
         return [True, None]
@@ -27,7 +27,7 @@ def generate_output_path(input_file: str, manual_path: str, nd: bool) -> Path:
             print("New directory request will be ignored since an output path was chosen manually.")
         return Path(manual_path)
     if nd:
-        return nxttxt_module.enumerate_duplicate_paths(input_path.with_suffix(''))
+        return nxttxt.enumerate_duplicate_paths(input_path.with_suffix(''))
     return input_path.parent
 
 

@@ -2,35 +2,35 @@ import unzip
 import extract
 import poster
 import argparse
-import nxttxt_module
+import nxttxt
 from pathlib import Path
 
 
-def unzip_drive(unzip_input: str, output: str):
-    output_path = Path(output)
+def unzip_drive(unzip_input: str, cache: str, output: str):
+    output_path = Path(cache)
     if not output_path.exists():
         output_path.mkdir()
     else:
-        nxttxt_module.empty_directory(output_path)
+        nxttxt.clear_directory(output_path, False)
 
     auth = unzip.authenticate_instructional_validity(unzip_input, output)
     if auth[0]:
         unzip.unzip_file(unzip_input, output_path, True)
     else:
         print(auth[1])
+        nxttxt.clear_directory(output_path, True)
         exit(1)
 
 
-def extract_drive(extract_input: str) -> list:
+def extract_drive(extract_input: str, timeout: int) -> list:
     if Path(extract_input).exists() and Path(extract_input).is_dir():
         # Extract text from PDF cache
         pdfs = extract.determine_pdfs(extract_input)
         paths_list = extract.create_path_objects(pdfs, Path(""))
-        extractions_paths = extract.extract_text(paths_list, None)
+        extractions_paths = extract.extract_text(paths_list, timeout)
 
         # Empty and delete PDF cache
-        nxttxt_module.empty_directory(Path(extract_input))
-        Path(extract_input).rmdir()
+        nxttxt.clear_directory(Path(extract_input), True)
 
         return extractions_paths
     else:
@@ -39,6 +39,9 @@ def extract_drive(extract_input: str) -> list:
 
 
 def poster_drive(poster_inputs: list, origin_path: str, output: str, nd: bool, port: int, address: str):
+    if not (output and nxttxt.is_valid_path(output, True)):
+        print("Invalid output directory.")
+        exit(1)
     poster_list = []
     for poster_input in poster_inputs:
         poster_list.append({
@@ -67,10 +70,13 @@ if __name__ == "__main__":
     parser.add_argument("-nd", action="store_true", help="Places analyzed text files into new directory with same "
                                                          "name as original directory but with 'analyzed txts' on the "
                                                          "end(Defaults to false).")
+    parser.add_argument("-timeout", metavar="Extraction time limit", type=int, help="Restricts the time for the "
+                                                                                    "extractions of each PDF to the "
+                                                                                    "inputted value in seconds.")
 
     args = parser.parse_args()
     pdfs_cache_path = Path("nxttxt_driver cache/")
 
-    unzip_drive(args.input, pdfs_cache_path)
-    extractions = extract_drive(pdfs_cache_path)
+    unzip_drive(args.input, pdfs_cache_path, args.output)
+    extractions = extract_drive(pdfs_cache_path, args.timeout)
     poster_drive(extractions, args.input, args.output, args.nd, args.p, args.address)

@@ -3,7 +3,7 @@ import argparse
 import textract
 import PyPDF2
 import signal
-import nxttxt_module
+import nxttxt
 import time
 
 
@@ -11,12 +11,12 @@ import time
 def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
     print("Authenticate validity of entered paths...")
     input_path = Path(input_dir)
-    if nxttxt_module.is_valid_path(input_path, True) and output_dir and (not nxttxt_module.is_valid_path(output_dir,
-                                                                                                         True)):
+    if nxttxt.is_valid_path(input_path, True) and output_dir and (not nxttxt.is_valid_path(output_dir,
+                                                                                           True)):
         result = [False, "The specified output path is not valid."]
-    elif not nxttxt_module.is_valid_path(input_path, False):
+    elif not nxttxt.is_valid_path(input_path, False):
         result = [False, "The specified input path is not valid."]
-    elif not nxttxt_module.is_valid_path(input_path, True):
+    elif not nxttxt.is_valid_path(input_path, True):
         result = [False, "The specified input path is not a directory."]
     else:
         result = [True, None]
@@ -51,7 +51,7 @@ def generate_output_path(input_dir: str, manual_path: str, new_dir: bool) -> Pat
         final_path = Path(manual_path)
     elif new_dir:
         test_path = input_path.parent / (input_path.stem + " extracted pdfs")
-        final_path = nxttxt_module.enumerate_duplicate_paths(test_path)
+        final_path = nxttxt.enumerate_duplicate_paths(test_path)
     else:
         final_path = input_path
     print("    Output path generated as", final_path, ".")
@@ -70,41 +70,43 @@ def create_output_directory(output_path: Path, input_str: str, pdfs_list: list, 
 
 
 def create_path_objects(pdf_paths: list, final_output_file: Path) -> list:
-    print("Creating Txts")
+    print("Compiling PDF and Txts paths")
     paths: list = []
     for pdf_path in pdf_paths:
-        txt_path = nxttxt_module.enumerate_duplicate_paths(final_output_file / Path(pdf_path.stem).with_suffix(".txt"))
+        txt_path = nxttxt.enumerate_duplicate_paths(final_output_file / Path(pdf_path.stem).with_suffix(".txt"))
         paths.append({
             "pdf": pdf_path,
             "txt": txt_path
         })
-    print("    Files created.")
+    print("    Paths compiled.")
     return paths
 
 
-def extract_text(paths: list, max_extraction_time):
+def extract_text(paths: list, max_extraction_time: int) -> list:
     print("Extracting text...")
+    extraction_list = []
     for path in paths:
-        signal.signal(signal.SIGALRM, nxttxt_module.alarm_handler)
         if max_extraction_time:
+            signal.signal(signal.SIGALRM, nxttxt.alarm_handler)
             signal.alarm(max_extraction_time)
         start_time = time.time()
         try:
             extracted_text: str = textract.process(path["pdf"], method="pdfminer")
             completion_time = time.time() - start_time
-        except nxttxt_module.TimeOutException:
+        except nxttxt.exceptions.TimeOutException:
             incomplete_time = time.time() - start_time
             print("   ", path["pdf"], "timed out after", incomplete_time, "seconds.")
-            paths.remove(path)
         except (textract.parsers.exceptions.ShellError, textract.parsers.exceptions.ExtensionNotSupported):
             print("    There was a error reading", path["pdf"], "the file may be corrupted so it will be skipped.")
-            paths.remove(path)
         else:
             print("   ", path["pdf"], "extracted in", completion_time, "seconds.")
             path["extractions"] = str(extracted_text)
+            extraction_list.append(path)
         signal.alarm(0)
     print("    All PDFs extracted.")
-    return paths
+    print(extraction_list)
+
+    return extraction_list
 
 
 def touch_and_write_files(paths: list):
