@@ -1,73 +1,48 @@
 import json
+import nxttxt
 import requests
 import argparse
 from pathlib import Path
 
 
 # "Modular" functions
-def server_is_active(url: str):
+def server_is_active(url: str) -> list:
     state_of_the_server: list
     try:
         requests.get(url)
     except requests.exceptions.ConnectionError:
-        state_of_the_server = [False, "Connection to server failed. Please check that your instance is active."]
+        state_of_the_server = [False, "Connection to server failed. Please check that your instance is active.", nxttxt.exceptions.ConnectionRejected]
     except requests.exceptions.Timeout:
-        state_of_the_server = [False, "Connection Timed Out."]
+        state_of_the_server = [False, "Connection Timed Out.", nxttxt.exceptions.ConnectionTimeout]
     except requests.exceptions.TooManyRedirects:
-        state_of_the_server = [False, "The address entered causes too many redirects."]
+        state_of_the_server = [False, "The address entered causes too many redirects.", nxttxt.exceptions.TooManyRedirects]
     except requests.exceptions.RequestException:
         state_of_the_server = [False, "There was an unknown issue with the server. Please check that engine is "
-                                      "working properly."]
+                                      "working properly.", nxttxt.exceptions.UnknownConnectionError]
     else:
         state_of_the_server = [True, "Success!"]
     return state_of_the_server
 
 
-def enumerate_duplicate_paths(start_path: Path):
-    parent = start_path.parent
-    suffix = "".join(start_path.suffixes)
-    test_path = start_path.with_suffix('').name
-
-    ends_in_a_number: bool = True
-
-    try:
-        iteration_number = int(test_path.split()[-1])
-        print("iteration_number", iteration_number)
-
-    except (ValueError, IndexError):
-        iteration_number = 1
-        ends_in_a_number = False
-
-    print("    Generating name...")
-    while ((parent / test_path).with_suffix(suffix)).exists():
-        if ends_in_a_number:
-            test_path = " ".join(test_path.split()[:-1])
-        test_path += " " + str(iteration_number + 1)
-        ends_in_a_number = True
-        iteration_number += 1
-
-    return (parent / test_path).with_suffix(suffix)
-
-
-def retrieve_path_without_manual_output(input_dir: str, new_dir: bool):
-    if new_dir:
-        final_output_path = enumerate_duplicate_paths(Path(input_dir) / "sa-engine analysis")
-    else:
-        final_output_path = Path(input_dir)
-    return final_output_path
-
-
 # "Procedural" functions
-def determine_txts(input_dir: str):
+def authenticate_instructional_validity(input_dir: str, output_dir: str) -> list:
+    print("Authenticate validity of entered paths...")
+    input_path = Path(input_dir)
+    if nxttxt.is_valid_path(input_path, True) and output_dir and \
+            (not nxttxt.is_valid_path(Path(output_dir), True)):
+        result = [False, "The specified output path is not valid.", nxttxt.exceptions.InvalidPath]
+    elif not nxttxt.is_valid_path(input_path, False):
+        result = [False, "The specified output path is not valid.", nxttxt.exceptions.InvalidPath]
+    elif not nxttxt.is_valid_path(input_path, True):
+        result = [False, "The specified input path is not a directory.", nxttxt.exceptions.PathIsNotADirectory]
+    else:
+        result = [True, None]
+    return result
+
+
+def determine_txts(input_dir: str) -> list:
     print("Identifying TXT files... ")
     input_path = Path(input_dir)
-    if not input_path.exists():
-        print(input_dir, "is not a valid path.")
-        exit(1)
-    elif not input_path.is_dir():
-        print(input_dir, "is not a directory, it is either a file, or it is a broken symbolic link.")
-        exit(1)
-
     txt_working_list: list = []
     print("    TXTs in", input_dir + ":")
     for child in input_path.iterdir():
@@ -77,7 +52,7 @@ def determine_txts(input_dir: str):
     return txt_working_list
 
 
-def determine_url(address: str, port: int):
+def determine_url(address: str, port: int) -> str:
     print("Identifying server...")
     url: str
     if not port:
@@ -88,41 +63,53 @@ def determine_url(address: str, port: int):
     server_active = server_is_active(url + "/management/health")
     if not server_active[0]:
         print(server_active[1])
-        exit(1)
+        raise server_active[2]
     print("    Connection successful.")
     return url + "/api/v1/articles/analyzeText"
 
 
-def analyze_txts(txt_file_paths: list, url: str):
+def read_txts(txt_file_paths: list) -> list:
+    txts = []
+    for txt_file_path in txt_file_paths:
+        data = open(str(txt_file_path), "rb").read()
+        txts.append({
+            "txt_path": Path(txt_file_path.name),
+            "data": data
+        })
+    return txts
+
+
+def analyze_txts(txts: list, url: str) -> list:
     print("Requesting analysis...")
-    analyzed_txts: dir = {}
+    analyzed_txts = []
     headers = {
         "Content-type": "text/plain",
         "Accept": "application/json"
     }
-    for txt_file_path in txt_file_paths:
-        data = open(str(txt_file_path), "rb").read()
-        print("    Analyzing", str(txt_file_path) + "...")
-        response = requests.post(url, headers=headers, data=data)
+    for txt in txts:
+        print("    Analyzing", str(txt["txt_path"]) + "...")
+        response = requests.post(url, headers=headers, data=txt["data"])
         if response.status_code == requests.codes.ok:
-            analyzed_txts.update([(txt_file_path.with_suffix(".json").name, response)])
+            txt.update({
+                "analysis": response,
+                "analysis_path": txt["txt_path"].with_suffix(".json")
+            })
+            analyzed_txts.append(txt)
         else:
-            print("    Request for analysis of", str(txt_file_path), "failed with error code:", response.status_code)
+            print("    Request for analysis of", str(txt["txt_path"]), "failed with error code:", response.status_code)
 
     return analyzed_txts
 
 
-def determine_output_path(input_dir: str, output_dir: str, new_dir: bool):
+def determine_output_path(input_dir: str, output_dir: str, new_dir: bool) -> Path:
     print("Identifying output directory...")
     final_output_path: Path
     if output_dir:
-        if not Path(output_dir).exists():
-            print(output_dir, "does not exist. Please enter an exist output directory if you wish to manually select "
-                              "one.")
-            exit(1)
         final_output_path = Path(output_dir)
+    elif new_dir:
+        final_output_path = nxttxt.enumerate_duplicate_paths(Path(input_dir).parent / "sa-engine analysis")
     else:
-        final_output_path = retrieve_path_without_manual_output(input_dir, new_dir)
+        final_output_path = Path(input_dir).parent
     print("    Output directory will be", str(final_output_path) + ".")
     return final_output_path
 
@@ -133,14 +120,14 @@ def create_output_dir(output_dir: Path):
         print("    Output directory created.")
 
 
-def create_files(analysis_list: dir, output_dir: Path):
+def create_files(analysis_list: list, output_dir: Path):
     print("Creating analyzed files...")
-    for analysis_path in analysis_list:
-        created_path = enumerate_duplicate_paths(output_dir.joinpath(analysis_path))
+    for analysis_dict in analysis_list:
+        created_path = nxttxt.enumerate_duplicate_paths(output_dir.joinpath(analysis_dict["analysis_path"]))
         print("    Creating", str(created_path) + "...")
         created_path.touch()
         print("    Writing analysis...")
-        created_path.write_text(json.dumps(analysis_list[analysis_path].json()))
+        created_path.write_text(json.dumps(analysis_dict["analysis"].json()))
     print("    Analysis complete!")
 
 
@@ -161,10 +148,18 @@ if __name__ == "__main__":
                                                                                    "Defaults to same as input).")
 
     args = parser.parse_args()
-    files = determine_txts(args.input)
-    output_url = determine_url(args.address, args.p)
-    analysis = analyze_txts(files, output_url)
-    output_path = determine_output_path(args.input, args.output, args.nd)
-    create_output_dir(output_path)
-    create_files(analysis, output_path)
-    print("Process complete.")
+    auth = authenticate_instructional_validity(args.input, args.output)
+    if auth[0]:
+        files = determine_txts(args.input)
+        output_url = determine_url(args.address, args.p)
+        text = read_txts(files)
+        print(text)
+        analysis = analyze_txts(text, output_url)
+        output_path = determine_output_path(args.input, args.output, args.nd)
+
+        create_output_dir(output_path)
+        create_files(analysis, output_path)
+        print("Process complete.")
+    else:
+        print(auth[1])
+        raise auth[2]
